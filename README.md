@@ -118,7 +118,9 @@ frontend/
 ## Tech stack
 
 **Python · FastAPI · asyncio · Server-Sent Events · Anthropic Claude (Opus 4.8)**
-· web-search tool use · structured outputs · vanilla-JS animated frontend.
+· web-search tool use · structured outputs · a self-contained animated frontend
+(cohesive design system, SVG line-icons, light/dark theme, fully responsive —
+no build step, no CDN).
 
 ## Deploy
 
