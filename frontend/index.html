@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Multi-Agent Content Studio</title>
+<style>
+  :root{
+    --bg:#0a0b12; --bg2:#0f1120; --panel:#141628; --panel2:#1a1d34;
+    --line:#252846; --text:#e8eaf6; --muted:#9aa0c3; --faint:#6b7099;
+    --researcher:#22d3ee; --writer:#818cf8; --reviewer:#fbbf24;
+    --editor:#c084fc; --publisher:#34d399;
+    --accent:#818cf8; --accent2:#e879f9; --danger:#fb7185;
+    --radius:16px; --shadow:0 20px 60px -20px rgba(0,0,0,.7);
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:var(--sans); color:var(--text); background:var(--bg);
+    min-height:100vh; line-height:1.55; -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(900px 500px at 15% -10%, rgba(129,140,248,.18), transparent 60%),
+      radial-gradient(800px 500px at 100% 0%, rgba(232,121,249,.14), transparent 55%),
+      radial-gradient(700px 600px at 50% 120%, rgba(52,211,153,.10), transparent 60%);
+    background-attachment:fixed;
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding:32px 22px 90px}
+
+  /* ---------- header ---------- */
+  header{display:flex; align-items:center; gap:14px; margin-bottom:26px}
+  .logo{
+    width:46px; height:46px; border-radius:13px; flex:none; position:relative;
+    background:conic-gradient(from 200deg, var(--researcher), var(--writer), var(--reviewer), var(--editor), var(--publisher), var(--researcher));
+    box-shadow:0 0 0 1px rgba(255,255,255,.08), 0 8px 30px -6px rgba(129,140,248,.6);
+    animation:spin 14s linear infinite;
+  }
+  .logo::after{content:""; position:absolute; inset:5px; border-radius:9px; background:var(--bg2)}
+  .logo span{position:absolute; inset:0; display:grid; place-items:center; font-size:20px; z-index:1}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .title h1{margin:0; font-size:22px; letter-spacing:-.02em}
+  .title p{margin:2px 0 0; color:var(--muted); font-size:13.5px}
+  .grad{background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent}
+
+  /* ---------- control panel ---------- */
+  .panel{background:linear-gradient(180deg,var(--panel),var(--bg2)); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow)}
+  .controls{padding:20px}
+  .controls .row{display:grid; grid-template-columns:1fr 170px 150px auto; gap:12px; align-items:end}
+  label{display:block; font-size:12px; color:var(--muted); margin:0 0 6px 2px; font-weight:600; letter-spacing:.02em}
+  input,select,textarea{
+    width:100%; background:#0c0e1c; color:var(--text); border:1px solid var(--line);
+    border-radius:11px; padding:12px 13px; font:inherit; font-size:14.5px; outline:none;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  input:focus,select:focus,textarea:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(129,140,248,.18)}
+  input::placeholder{color:var(--faint)}
+  .angle{margin-top:12px}
+  button{cursor:pointer; font:inherit; font-weight:650; border:none; border-radius:11px; transition:transform .12s, filter .15s, opacity .15s}
+  button:active{transform:translateY(1px)}
+  .btn-run{
+    padding:12px 22px; color:#0b0b18; white-space:nowrap; font-size:14.5px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    box-shadow:0 10px 30px -8px rgba(129,140,248,.7);
+  }
+  .btn-run:hover{filter:brightness(1.08)}
+  .btn-run:disabled{opacity:.5; cursor:not-allowed; filter:grayscale(.3)}
+
+  /* ---------- pipeline ---------- */
+  .pipeline{display:flex; align-items:stretch; gap:0; margin:26px 0 22px; overflow-x:auto; padding:4px}
+  .node{
+    flex:1 1 0; min-width:150px; background:var(--panel); border:1px solid var(--line);
+    border-radius:14px; padding:14px 14px 13px; position:relative; text-align:center;
+    transition:transform .25s, border-color .35s, box-shadow .35s, background .35s;
+  }
+  .node .ic{font-size:22px; line-height:1; display:block; margin-bottom:8px; filter:grayscale(.6) opacity(.7); transition:filter .35s, transform .35s}
+  .node .nm{font-weight:650; font-size:13.5px}
+  .node .st{font-size:11.5px; color:var(--faint); margin-top:3px; min-height:15px; transition:color .3s}
+  .connector{flex:0 0 24px; align-self:center; height:2px; background:var(--line); position:relative; margin-top:2px}
+  .connector::after{content:""; position:absolute; inset:0; width:0; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .5s ease}
+  .connector.filled::after{width:100%}
+  .node.active{border-color:var(--c); background:linear-gradient(180deg,var(--panel2),var(--panel)); box-shadow:0 0 0 1px var(--c), 0 14px 40px -14px var(--c); transform:translateY(-3px)}
+  .node.active .ic{filter:none; transform:scale(1.12)}
+  .node.active .st{color:var(--c)}
+  .node.active::before{content:""; position:absolute; inset:-1px; border-radius:14px; border:1px solid var(--c); opacity:.7; animation:halo 1.4s ease-out infinite}
+  @keyframes halo{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.06);opacity:0}}
+  .node.done{border-color:color-mix(in srgb,var(--c) 55%,var(--line))}
+  .node.done .ic{filter:none}
+  .node.done .st{color:color-mix(in srgb,var(--c) 80%,var(--text))}
+  .node .badge{position:absolute; top:8px; right:9px; font-size:12px; opacity:0; transform:scale(.5); transition:opacity .3s,transform .3s}
+  .node.done .badge{opacity:1; transform:scale(1)}
+
+  /* ---------- layout ---------- */
+  .grid{display:grid; grid-template-columns:1.55fr 1fr; gap:18px; align-items:start}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden}
+  .card h2{margin:0; font-size:12.5px; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); padding:14px 16px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:8px}
+  .card .body{padding:16px}
+  .dot{width:8px; height:8px; border-radius:50%; background:var(--faint); flex:none}
+  .dot.live{background:var(--accent); box-shadow:0 0 0 0 var(--accent); animation:pulse 1.3s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(129,140,248,.6)}70%{box-shadow:0 0 0 8px rgba(129,140,248,0)}100%{box-shadow:0 0 0 0 rgba(129,140,248,0)}}
+
+  /* live stream + document */
+  #liveWrap{display:none}
+  .streaming{font-family:var(--mono); font-size:13px; color:var(--muted); white-space:pre-wrap; word-break:break-word; max-height:230px; overflow:auto; background:#0b0d1a; border:1px solid var(--line); border-radius:11px; padding:13px}
+  .streaming .cursor{display:inline-block; width:8px; height:15px; background:var(--accent); vertical-align:-2px; animation:blink .9s steps(1) infinite; border-radius:1px}
+  @keyframes blink{50%{opacity:0}}
+  .doc{font-size:15px; line-height:1.7}
+  .doc.empty{color:var(--faint); font-style:italic; font-size:14px}
+  .doc h1{font-size:25px; letter-spacing:-.02em; margin:.2em 0 .5em}
+  .doc h2{font-size:18px; margin:1.4em 0 .5em; color:#dfe2ff}
+  .doc h3{font-size:15px; margin:1.2em 0 .4em; color:var(--muted)}
+  .doc p{margin:.7em 0}
+  .doc ul,.doc ol{margin:.6em 0; padding-left:1.3em}
+  .doc li{margin:.28em 0}
+  .doc a{color:var(--accent); text-decoration:none; border-bottom:1px solid rgba(129,140,248,.35)}
+  .doc code{font-family:var(--mono); font-size:.88em; background:#0b0d1a; border:1px solid var(--line); padding:1px 6px; border-radius:6px}
+  .doc hr{border:none; border-top:1px solid var(--line); margin:1.4em 0}
+  .doc strong{color:#fff}
+
+  .stagechip{display:inline-flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); background:#0b0d1a; border:1px solid var(--line); padding:4px 10px; border-radius:999px}
+  .stagechip .d{width:7px;height:7px;border-radius:50%;background:var(--c,var(--accent))}
+
+  /* review gauge */
+  #reviewCard{display:none}
+  .gauge{display:flex; align-items:center; gap:16px}
+  .ring{--v:0; width:92px; height:92px; flex:none}
+  .ring circle{fill:none; stroke-width:9; stroke-linecap:round}
+  .ring .bg{stroke:#20233f}
+  .ring .fg{stroke:url(#gg); stroke-dasharray:239; stroke-dashoffset:239; transform:rotate(-90deg); transform-origin:50% 50%; transition:stroke-dashoffset 1s cubic-bezier(.3,1,.4,1)}
+  .ring text{fill:var(--text); font-size:26px; font-weight:700; font-family:var(--sans)}
+  .ring tspan{fill:var(--faint); font-size:12px; font-weight:500}
+  .verdict{font-size:13.5px; color:var(--muted)}
+  .verdict b{color:var(--text); display:block; margin-bottom:2px; font-size:14px}
+  .issue{display:flex; gap:9px; padding:9px 0; border-top:1px solid var(--line); font-size:13px}
+  .issue:first-child{border-top:none}
+  .sev{flex:none; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:2px 7px; border-radius:6px; height:fit-content; margin-top:1px}
+  .sev.high{background:rgba(251,113,133,.16); color:var(--danger)}
+  .sev.medium{background:rgba(251,191,36,.16); color:var(--reviewer)}
+  .sev.low{background:rgba(129,140,248,.16); color:var(--accent)}
+  .issue .fix{color:var(--faint); font-size:12px; margin-top:2px}
+  .strengths{margin:10px 0 0; padding:0; list-style:none}
+  .strengths li{font-size:12.5px; color:var(--muted); padding:3px 0 3px 20px; position:relative}
+  .strengths li::before{content:"✓"; position:absolute; left:0; color:var(--publisher); font-weight:700}
+
+  /* sources */
+  #sourcesCard{display:none}
+  .src{display:block; padding:9px 11px; border:1px solid var(--line); border-radius:10px; margin-bottom:8px; text-decoration:none; color:var(--text); font-size:13px; transition:border-color .15s, transform .15s, background .15s}
+  .src:hover{border-color:var(--accent); background:#0d1024; transform:translatex(2px)}
+  .src .host{color:var(--faint); font-size:11.5px; margin-top:2px; word-break:break-all}
+
+  /* activity log */
+  .log{max-height:220px; overflow:auto; font-size:12.5px}
+  .log .l{display:flex; gap:9px; padding:5px 0; border-top:1px dashed var(--line); animation:slidein .3s ease}
+  .log .l:first-child{border-top:none}
+  @keyframes slidein{from{opacity:0; transform:translatex(-6px)}to{opacity:1; transform:none}}
+  .log .tag{flex:none; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:1px 7px; border-radius:5px; height:fit-content; margin-top:1px; background:#0b0d1a; border:1px solid var(--line); color:var(--muted)}
+  .log .msg{color:var(--muted)}
+  .log .msg .q{color:var(--researcher)}
+
+  /* approval */
+  #approval{display:none; margin-top:18px; position:sticky; bottom:14px; z-index:5; animation:pop .4s cubic-bezier(.2,1.2,.3,1)}
+  @keyframes pop{from{opacity:0; transform:translateY(14px)}to{opacity:1; transform:none}}
+  .approval-inner{background:linear-gradient(180deg,var(--panel2),var(--panel)); border:1px solid var(--accent); border-radius:14px; padding:16px; box-shadow:0 24px 60px -18px rgba(129,140,248,.55), 0 0 0 1px rgba(129,140,248,.2)}
+  .approval-inner h3{margin:0 0 3px; font-size:15px}
+  .approval-inner p{margin:0 0 12px; color:var(--muted); font-size:13px}
+  .approval-actions{display:flex; gap:10px; flex-wrap:wrap}
+  .btn-approve{padding:11px 20px; color:#062015; background:linear-gradient(90deg,var(--publisher),#6ee7b7); box-shadow:0 10px 26px -10px rgba(52,211,153,.7)}
+  .btn-reject{padding:11px 18px; color:var(--text); background:#22253f; border:1px solid var(--line)}
+  .btn-reject:hover{border-color:var(--danger); color:var(--danger)}
+  #rejectBox{display:none; margin-top:12px}
+  #rejectBox textarea{min-height:64px; resize:vertical}
+  #rejectBox .rr{display:flex; gap:10px; margin-top:10px}
+  .btn-send{padding:9px 16px; background:linear-gradient(90deg,var(--accent),var(--accent2)); color:#0b0b18}
+
+  .published{border-color:var(--publisher); box-shadow:0 0 0 1px rgba(52,211,153,.3), 0 24px 60px -22px rgba(52,211,153,.35)}
+  .published h2{color:var(--publisher)}
+  .banner{display:none; align-items:center; gap:10px; background:rgba(52,211,153,.1); border:1px solid rgba(52,211,153,.35); color:#a7f3d0; padding:11px 15px; border-radius:12px; margin-bottom:16px; font-size:14px; font-weight:600; animation:pop .4s ease}
+
+  .err{display:none; background:rgba(251,113,133,.1); border:1px solid rgba(251,113,133,.4); color:#fecdd3; padding:12px 15px; border-radius:12px; margin-top:16px; font-size:14px}
+  .empty-hint{color:var(--faint); font-size:13.5px; padding:8px 2px}
+
+  @media (max-width:860px){
+    .controls .row{grid-template-columns:1fr 1fr}
+    .controls .row .btn-run{grid-column:1 / -1}
+    .grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo"><span>◆</span></div>
+    <div class="title">
+      <h1>Multi-Agent Content <span class="grad">Studio</span></h1>
+      <p>Researcher → Writer → Reviewer → Editor → Publisher · orchestrated with Claude tool-use &amp; SSE</p>
+    </div>
+  </header>
+
+  <!-- controls -->
+  <div class="panel controls">
+    <div class="row">
+      <div>
+        <label>Topic</label>
+        <input id="topic" placeholder="e.g. How RAG systems reduce LLM hallucinations" maxlength="200" />
+      </div>
+      <div>
+        <label>Tone</label>
+        <select id="tone">
+          <option value="informative">Informative</option>
+          <option value="conversational">Conversational</option>
+          <option value="professional">Professional</option>
+          <option value="witty">Witty</option>
+          <option value="technical">Technical</option>
+        </select>
+      </div>
+      <div>
+        <label>Length</label>
+        <select id="length">
+          <option value="short">Short</option>
+          <option value="medium" selected>Medium</option>
+          <option value="long">Long</option>
+        </select>
+      </div>
+      <button class="btn-run" id="runBtn">Run pipeline ▸</button>
+    </div>
+    <div class="angle">
+      <label>Angle / audience <span style="color:var(--faint);font-weight:400">(optional)</span></label>
+      <input id="angle" placeholder="e.g. for engineering managers evaluating build-vs-buy" maxlength="200" />
+    </div>
+  </div>
+
+  <!-- pipeline -->
+  <div class="pipeline" id="pipeline"></div>
+
+  <!-- workspace -->
+  <div class="grid">
+    <div>
+      <div class="banner" id="banner">🚀 Published — your post is ready below.</div>
+
+      <div class="card" id="docCard">
+        <h2><span class="dot" id="docDot"></span> <span id="docTitle">Workspace</span>
+          <span style="flex:1"></span><span class="stagechip" id="stageChip" style="display:none"><span class="d"></span><span id="stageName"></span></span>
+        </h2>
+        <div class="body">
+          <div id="liveWrap"><div class="streaming" id="stream"></div></div>
+          <div class="doc empty" id="doc">The generated draft will appear here. Enter a topic and run the pipeline.</div>
+        </div>
+      </div>
+
+      <!-- human-in-the-loop gate -->
+      <div id="approval">
+        <div class="approval-inner">
+          <h3>Human review — your call ✋</h3>
+          <p>The agents converged on the draft above. Approve to publish, or request changes.</p>
+          <div class="approval-actions">
+            <button class="btn-approve" id="approveBtn">✓ Approve &amp; publish</button>
+            <button class="btn-reject" id="rejectBtn">Request changes</button>
+          </div>
+          <div id="rejectBox">
+            <textarea id="feedback" placeholder="What should the editor change? e.g. 'Add a concrete example in section 2 and cut the intro in half.'"></textarea>
+            <div class="rr">
+              <button class="btn-send" id="sendReject">Send to editor ↻</button>
+              <button class="btn-reject" id="cancelReject">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="err" id="err"></div>
+    </div>
+
+    <!-- right rail -->
+    <div>
+      <div class="card" id="reviewCard">
+        <h2>🧐 Reviewer verdict</h2>
+        <div class="body">
+          <div class="gauge">
+            <svg class="ring" id="ring" viewBox="0 0 92 92">
+              <defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#fbbf24"/><stop offset="1" stop-color="#34d399"/>
+              </linearGradient></defs>
+              <circle class="bg" cx="46" cy="46" r="38"/>
+              <circle class="fg" id="ringFg" cx="46" cy="46" r="38"/>
+              <text x="46" y="44" text-anchor="middle" id="scoreTxt">–</text>
+              <text x="46" y="62" text-anchor="middle"><tspan>/ 10</tspan></text>
+            </svg>
+            <div class="verdict"><b id="verdict">Awaiting review…</b><span id="revNote"></span></div>
+          </div>
+          <ul class="strengths" id="strengths"></ul>
+          <div id="issues" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+      <div class="card" id="sourcesCard" style="margin-top:18px">
+        <h2>🔎 Sources</h2>
+        <div class="body" id="sources"></div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h2><span class="dot" id="logDot"></span> Activity log</h2>
+        <div class="body"><div class="log" id="log"><div class="empty-hint">Events will stream here in real time.</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- agent metadata ----------
+const AGENTS = [
+  {id:"researcher", name:"Researcher", icon:"🔎", color:"var(--researcher)"},
+  {id:"writer",     name:"Writer",     icon:"✍️", color:"var(--writer)"},
+  {id:"reviewer",   name:"Reviewer",   icon:"🧐", color:"var(--reviewer)"},
+  {id:"editor",     name:"Editor",     icon:"✂️", color:"var(--editor)"},
+  {id:"publisher",  name:"Publisher",  icon:"🚀", color:"var(--publisher)"},
+];
+const A = Object.fromEntries(AGENTS.map(a=>[a.id,a]));
+
+// ---------- build pipeline ----------
+const pipeEl = document.getElementById("pipeline");
+AGENTS.forEach((a,i)=>{
+  const n = document.createElement("div");
+  n.className = "node"; n.id = "node-"+a.id; n.style.setProperty("--c", a.color);
+  n.innerHTML = `<span class="badge">✓</span><span class="ic">${a.icon}</span>
+    <div class="nm">${a.name}</div><div class="st" id="st-${a.id}">idle</div>`;
+  pipeEl.appendChild(n);
+  if(i<AGENTS.length-1){
+    const c=document.createElement("div"); c.className="connector"; c.id="conn-"+i; pipeEl.appendChild(c);
+  }
+});
+
+// ---------- tiny markdown renderer (self-contained, no CDN) ----------
+function esc(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+function inline(s){
+  return esc(s)
+    .replace(/`([^`]+)`/g,(_,c)=>`<code>${c}</code>`)
+    .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
+    .replace(/\*([^*]+)\*/g,"<em>$1</em>")
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+}
+function md(src){
+  const lines=(src||"").replace(/\r/g,"").split("\n"); let html=""; let list=null;
+  const closeList=()=>{ if(list){html+=`</${list}>`; list=null;} };
+  for(let raw of lines){
+    const line=raw.trimEnd();
+    if(!line.trim()){ closeList(); continue; }
+    let m;
+    if((m=line.match(/^(#{1,3})\s+(.*)/))){ closeList(); const n=m[1].length; html+=`<h${n}>${inline(m[2])}</h${n}>`; continue; }
+    if(/^(-{3,}|\*{3,})$/.test(line.trim())){ closeList(); html+="<hr>"; continue; }
+    if((m=line.match(/^\s*[-*]\s+(.*)/))){ if(list!=="ul"){closeList(); list="ul"; html+="<ul>";} html+=`<li>${inline(m[1])}</li>`; continue; }
+    if((m=line.match(/^\s*\d+\.\s+(.*)/))){ if(list!=="ol"){closeList(); list="ol"; html+="<ol>";} html+=`<li>${inline(m[1])}</li>`; continue; }
+    closeList(); html+=`<p>${inline(line)}</p>`;
+  }
+  closeList(); return html;
+}
+
+// ---------- element refs ----------
+const $ = id => document.getElementById(id);
+const runBtn=$("runBtn"), doc=$("doc"), stream=$("stream"), liveWrap=$("liveWrap"),
+      logEl=$("log"), stageChip=$("stageChip"), stageName=$("stageName"),
+      docDot=$("docDot"), logDot=$("logDot"), banner=$("banner"), errEl=$("err"),
+      approval=$("approval"), docTitle=$("docTitle");
+
+// Client-held state: the draft is passed back to the server between phases,
+// so there is no server-side session (works on serverless too).
+let curOptions={}, curDraft="", streamBuf="", activeAgent=null, firstLog=true;
+
+// ---------- run ----------
+runBtn.onclick = start;
+$("topic").addEventListener("keydown", e=>{ if(e.key==="Enter") start(); });
+
+function collectOptions(){
+  return {topic:$("topic").value.trim(), tone:$("tone").value, length:$("length").value, angle:$("angle").value.trim()||null};
+}
+
+// EventSource can't POST, so we stream the fetch() response body and parse SSE frames.
+async function streamPost(url, body, onEvent){
+  const res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  if(!res.ok){ throw new Error("request failed ("+res.status+")"); }
+  const reader=res.body.getReader(); const dec=new TextDecoder(); let buf="";
+  while(true){
+    const {value,done}=await reader.read(); if(done) break;
+    buf+=dec.decode(value,{stream:true});
+    let i;
+    while((i=buf.indexOf("\n\n"))>=0){
+      const frame=buf.slice(0,i); buf=buf.slice(i+2);
+      const line=frame.split("\n").find(l=>l.startsWith("data: "));
+      if(line){ try{ onEvent(JSON.parse(line.slice(6))); }catch(err){ console.error(err); } }
+    }
+  }
+}
+
+async function start(){
+  const o=collectOptions();
+  if(o.topic.length<3){ $("topic").focus(); return; }
+  resetUI();
+  curOptions=o;
+  log("start", `Pipeline started · <span class="q">${escapeHtml(o.topic)}</span>`);
+  runPhase("/api/generate", o);
+}
+
+async function runPhase(url, body){
+  runBtn.disabled=true; runBtn.textContent="Running…";
+  logDot.classList.add("live"); docDot.classList.add("live");
+  try{ await streamPost(url, body, handle); }
+  catch(e){ showError(e.message); }
+  finally{ finish(); }
+}
+
+// ---------- event handling ----------
+function handle(e){
+  switch(e.type){
+    case "stage_start": onStageStart(e.agent, e.label); break;
+    case "search": log("search", `Searching: <span class="q">"${escapeHtml(e.query)}"</span>`, "researcher"); break;
+    case "sources": renderSources(e.sources); log("sources", `Collected ${e.sources.length} source${e.sources.length>1?"s":""}`, "researcher"); break;
+    case "token": onToken(e.agent, e.text); break;
+    case "stage_output": onStageOutput(e.agent, e.content); break;
+    case "review": renderReview(e); break;
+    case "revision_start": log("revise", `Revision ${e.cycle} — sending critique back to the editor`, "editor"); break;
+    case "awaiting_approval": onAwaitApproval(e.draft); break;
+    case "log": log(e.level||"info", escapeHtml(e.message)); break;
+    case "done": onDone(e); break;
+    case "error": showError(e.message); finish(); break;
+  }
+}
+
+function onStageStart(agent, label){
+  // finalize previous active node
+  if(activeAgent && activeAgent!==agent) markDone(activeAgent);
+  activeAgent=agent;
+  const node=$("node-"+agent);
+  node.classList.remove("done"); node.classList.add("active");
+  $("st-"+agent).textContent = "working…";
+  // fill connector leading into this node
+  const idx=AGENTS.findIndex(a=>a.id===agent);
+  for(let i=0;i<idx;i++) $("conn-"+i)?.classList.add("filled");
+  // live stream area
+  streamBuf=""; stream.innerHTML="";
+  const a=A[agent];
+  stageChip.style.display="inline-flex"; stageChip.querySelector(".d").style.background=a.color; stageName.textContent=label;
+  docTitle.textContent = agent==="researcher" ? "Research notes" : "Draft";
+  liveWrap.style.display = "block";
+  log("stage", `<b style="color:${a.color}">${label}</b> is working`, agent);
+}
+
+function onToken(agent, text){
+  if(agent!==activeAgent) return;
+  streamBuf+=text;
+  stream.innerHTML = escapeHtml(streamBuf) + '<span class="cursor"></span>';
+  stream.scrollTop = stream.scrollHeight;
+}
+
+function onStageOutput(agent, content){
+  markDone(agent);
+  // render into the document pane (research notes + every draft revision)
+  doc.classList.remove("empty");
+  doc.innerHTML = md(content);
+  liveWrap.style.display="none"; stageChip.style.display="none";
+  $("st-"+agent).textContent = "done";
+}
+
+function markDone(agent){
+  const node=$("node-"+agent);
+  if(node){ node.classList.remove("active"); node.classList.add("done"); const st=$("st-"+agent); if(st.textContent==="working…") st.textContent="done"; }
+}
+
+function renderReview(e){
+  $("reviewCard").style.display="block";
+  const s=e.score;
+  $("scoreTxt").textContent=s;
+  // ring: circumference ~239 (2πr, r=38)
+  $("ringFg").style.strokeDashoffset = 239 - (239*s/10);
+  $("verdict").textContent = e.verdict || "—";
+  $("revNote").textContent = e.revision>0 ? `after revision ${e.revision}` : "first pass";
+  const str=$("strengths"); str.innerHTML=(e.strengths||[]).map(x=>`<li>${escapeHtml(x)}</li>`).join("");
+  const iss=$("issues"); iss.innerHTML=(e.issues||[]).map(x=>
+    `<div class="issue"><span class="sev ${x.severity}">${x.severity}</span><div><div>${escapeHtml(x.issue)}</div><div class="fix">↳ ${escapeHtml(x.fix)}</div></div></div>`).join("")
+    || `<div class="empty-hint" style="padding:4px 0">No blocking issues 🎉</div>`;
+  log("review", `Scored <b>${s}/10</b> — ${escapeHtml((e.verdict||"").slice(0,60))}`, "reviewer");
+}
+
+function renderSources(sources){
+  $("sourcesCard").style.display="block";
+  $("sources").innerHTML = sources.map(s=>{
+    let host=""; try{ host=new URL(s.url).hostname.replace(/^www\./,""); }catch(_){}
+    return `<a class="src" href="${s.url}" target="_blank" rel="noopener">${escapeHtml(s.title||host)}<div class="host">${escapeHtml(host)}</div></a>`;
+  }).join("");
+}
+
+// ---------- approval gate (human-in-the-loop) ----------
+function onAwaitApproval(draft){
+  curDraft=draft;                       // client keeps the draft between phases
+  if(activeAgent){ markDone(activeAgent); activeAgent=null; }
+  approval.style.display="block";
+  approval.scrollIntoView({behavior:"smooth", block:"center"});
+  log("gate", "⏸ Waiting for your decision", "reviewer");
+}
+$("approveBtn").onclick = ()=>{
+  approval.style.display="none";
+  log("approve", "✓ Approved — sending to publisher", "publisher");
+  runPhase("/api/publish", {...curOptions, draft:curDraft});
+};
+$("rejectBtn").onclick = ()=>{ $("rejectBox").style.display="block"; $("feedback").focus(); };
+$("cancelReject").onclick = ()=>{ $("rejectBox").style.display="none"; };
+$("sendReject").onclick = ()=>{
+  const fb=$("feedback").value.trim();
+  approval.style.display="none"; $("rejectBox").style.display="none"; $("feedback").value="";
+  log("reject", "↻ Changes requested — back to the editor", "editor");
+  runPhase("/api/revise", {...curOptions, draft:curDraft, feedback:fb||null});
+};
+
+// ---------- done ----------
+function onDone(e){
+  markDone("publisher");
+  doc.classList.remove("empty"); doc.innerHTML = md(e.final);
+  $("docCard").classList.add("published");
+  docTitle.textContent="Published post"; docDot.classList.remove("live");
+  banner.style.display="flex";
+  banner.scrollIntoView({behavior:"smooth", block:"start"});
+  AGENTS.forEach(a=> $("conn-"+AGENTS.indexOf(a))?.classList.add("filled"));
+  for(let i=0;i<AGENTS.length-1;i++) $("conn-"+i).classList.add("filled");
+  log("done", "🎉 Pipeline complete", "publisher");
+}
+function finish(){
+  logDot.classList.remove("live"); docDot.classList.remove("live");
+  runBtn.disabled=false; runBtn.textContent="Run pipeline ▸";
+}
+
+// ---------- helpers ----------
+function log(tag, msgHtml, agent){
+  if(firstLog){ logEl.innerHTML=""; firstLog=false; }
+  const color = agent ? A[agent].color : "var(--faint)";
+  const row=document.createElement("div"); row.className="l";
+  row.innerHTML=`<span class="tag" style="color:${color};border-color:${color}33">${tag}</span><span class="msg">${msgHtml}</span>`;
+  logEl.prepend(row);
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function showError(msg){
+  errEl.style.display="block";
+  const html = escapeHtml(msg).replace(/console\.anthropic\.com/g,
+    '<a href="https://console.anthropic.com/settings/billing" target="_blank" rel="noopener" style="color:#fecdd3;text-decoration:underline">console.anthropic.com</a>');
+  errEl.innerHTML = "⚠ " + html;
+}
+
+function resetUI(){
+  curDraft=""; activeAgent=null; streamBuf=""; firstLog=true;
+  doc.classList.add("empty"); doc.innerHTML="Working…"; doc.textContent="Working…";
+  liveWrap.style.display="none"; stream.innerHTML=""; stageChip.style.display="none";
+  approval.style.display="none"; $("rejectBox").style.display="none";
+  banner.style.display="none"; errEl.style.display="none";
+  $("docCard").classList.remove("published"); docTitle.textContent="Workspace"; $("feedback").value="";
+  $("reviewCard").style.display="none"; $("sourcesCard").style.display="none";
+  $("scoreTxt").textContent="–"; $("ringFg").style.strokeDashoffset=239;
+  logEl.innerHTML='<div class="empty-hint">Events will stream here in real time.</div>';
+  AGENTS.forEach(a=>{ const n=$("node-"+a.id); n.classList.remove("active","done"); $("st-"+a.id).textContent="idle"; });
+  for(let i=0;i<AGENTS.length-1;i++) $("conn-"+i).classList.remove("filled");
+}
+</script>
+</body>
+</html>
