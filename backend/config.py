@@ -30,6 +30,22 @@ def length_words(options: dict) -> str:
     return LENGTH_WORDS.get(options.get("length", "medium"), "~850")
 
 
+# --- Output language ---------------------------------------------------------
+
+def lang_directive(options: dict) -> str:
+    """Instruction appended to every agent's system prompt to control output language."""
+    if options.get("language") == "ka":
+        return ("\n\nIMPORTANT: Write ALL output — the title, headings, body, and every label — "
+                "in fluent, natural Georgian (ქართული). Do not use English except for proper nouns "
+                "and technical terms that have no common Georgian equivalent.")
+    return ""
+
+
+def sys(base: str, options: dict) -> str:
+    """Attach the language directive to a base system prompt."""
+    return base + lang_directive(options)
+
+
 # --- Researcher --------------------------------------------------------------
 
 RESEARCHER_SYSTEM = """You are the Research agent in a content pipeline.

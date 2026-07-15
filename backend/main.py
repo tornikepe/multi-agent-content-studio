@@ -20,7 +20,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse, StreamingResponse
 
 from . import orchestrator
-from .llm import friendly_error
+from .llm import friendly_error, provider
 from .models import STREAM_END, Emitter, GenerateRequest, PublishRequest, ReviseRequest
 
 app = FastAPI(title="Multi-Agent Content Studio")
@@ -73,6 +73,12 @@ async def revise(req: ReviseRequest):
 @app.post("/api/publish")
 async def publish(req: PublishRequest):
     return sse(lambda em: orchestrator.publish(em, req.topic.strip(), req.options(), req.draft))
+
+
+@app.get("/api/config")
+async def config():
+    """Tells the UI which provider is active (and whether live web search is on)."""
+    return {"provider": provider.name, "label": provider.label, "web_search": provider.supports_web_search}
 
 
 @app.get("/")

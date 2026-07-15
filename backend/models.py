@@ -24,9 +24,10 @@ class _Base(BaseModel):
     tone: str = "informative"
     length: str = "medium"
     angle: str | None = Field(default=None, max_length=MAX_TOPIC_CHARS)
+    language: str = "en"  # "en" | "ka" — language of the generated content
 
     def options(self) -> dict:
-        return {"tone": self.tone, "length": self.length, "angle": self.angle}
+        return {"tone": self.tone, "length": self.length, "angle": self.angle, "language": self.language}
 
 
 class GenerateRequest(_Base):

@@ -18,11 +18,13 @@ and a human checkpoint. This project demonstrates all of it end-to-end:
 | Capability | Where it shows up |
 |---|---|
 | **Multi-agent orchestration** | `backend/orchestrator.py` chains five agents with a bounded revision loop |
-| **Server-side tool use** | The Researcher uses Claude's `web_search` tool for live, cited research |
+| **Pluggable LLM providers** | `backend/llm.py` — Claude, or free **Groq / Gemini**, or a zero-key **offline** mode; auto-detected |
+| **Server-side tool use** | On Claude, the Researcher uses the `web_search` tool for live, cited research |
 | **Structured outputs** | The Reviewer returns a strict JSON verdict (score + issues + fixes) |
 | **Streaming (SSE)** | Every token is streamed to the UI; you watch each agent "type" |
 | **Guardrails** | Score threshold, capped revision cycles, input validation |
 | **Human-in-the-loop** | The pipeline suspends at an approval gate until you approve or request changes |
+| **Bilingual** | Full English / ქართული UI, plus content generation in either language |
 
 ---
 
@@ -59,15 +61,31 @@ and a human checkpoint. This project demonstrates all of it end-to-end:
 ## Quick start
 
 ```bash
-# 1. Add your Anthropic API key
-cp .env.example .env
-# then edit .env and paste your key (from https://console.anthropic.com/)
-
-# 2. Run it (creates a venv, installs deps, starts the server)
-./run.sh
+# 1. Run it — no key needed (offline demo mode works out of the box)
+./run.sh            # creates a venv, installs deps, starts the server
 ```
 
 Open **http://localhost:8000**, enter a topic, and hit **Run pipeline**.
+
+### Real generation — add ONE free key
+
+Offline mode produces placeholder content. For real posts, add a **free** key:
+
+```bash
+cp .env.example .env
+```
+
+| Provider | Free? | Get a key | Notes |
+|---|---|---|---|
+| **Groq** | ✅ free, no card | [console.groq.com/keys](https://console.groq.com/keys) | Fast (Llama 3.3 70B) — recommended |
+| **Gemini** | ✅ free | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) | Great for Georgian |
+| **Claude** | paid | [console.anthropic.com](https://console.anthropic.com/) | Best quality + live web search |
+
+Paste it into `.env` and restart. Free providers are auto-detected first, so
+adding a Groq key "just works". The UI shows which provider is active.
+
+> **Language:** toggle the UI between **English / ქართული** (top-right), and pick
+> the **Content language** so the agents write the post in English or Georgian.
 
 <details>
 <summary>Manual setup (without run.sh)</summary>

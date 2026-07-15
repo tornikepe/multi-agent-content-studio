@@ -70,6 +70,14 @@
   .theme-icon-moon{display:none}
   :root[data-theme="light"] .theme-icon-sun{display:none}
   :root[data-theme="light"] .theme-icon-moon{display:block}
+  .lang-btn{width:auto; min-width:46px; padding:0 12px; font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.03em}
+  .prov-line{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:15px}
+  .prov-badge{display:inline-flex; align-items:center; gap:7px; font-family:var(--mono); font-size:11px; letter-spacing:.04em; color:var(--muted); background:var(--panel); border:1px solid var(--border); padding:5px 11px; border-radius:999px}
+  .prov-badge .pd{width:7px; height:7px; border-radius:50%; background:var(--good); flex:none}
+  .prov-badge.offline{color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,var(--border))}
+  .prov-badge.offline .pd{background:var(--warn)}
+  .prov-hint{font-size:12.5px; color:var(--faint)}
+  .prov-hint a{color:var(--accent); border-bottom:1px solid var(--accent-soft)}
 
   /* ---------- intro ---------- */
   .intro{margin:6px 0 22px; animation:fadeUp .8s cubic-bezier(.22,1,.36,1)}
@@ -86,7 +94,8 @@
   input,select,textarea{width:100%; background:var(--bg-2); color:var(--text); border:1px solid var(--border); border-radius:var(--radius-sm); padding:11px 13px; font:inherit; font-size:14.5px; outline:none; transition:border-color .15s,box-shadow .15s}
   input:focus,select:focus,textarea:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
   input::placeholder{color:var(--faint)}
-  .angle{margin-top:12px}
+  .controls .row2{display:grid; grid-template-columns:1fr 190px; gap:12px; margin-top:12px}
+  @media (max-width:720px){ .controls .row2{grid-template-columns:1fr} }
   button{cursor:pointer; font:inherit; font-weight:600; border:1px solid transparent; border-radius:var(--radius-sm); transition:transform .12s,filter .15s,background .15s,border-color .15s}
   button:active{transform:translateY(1px) scale(.99)}
   .btn-primary{display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:11px 20px; background:var(--accent); color:#fff; white-space:nowrap; box-shadow:var(--shadow-sm)}
@@ -284,8 +293,9 @@
     </div>
     <span class="spacer"></span>
     <a class="ghost-link" id="repoLink" href="https://github.com/tornikepe/multi-agent-content-studio" target="_blank" rel="noopener">
-      <svg><use href="#ic-github"/></svg><span>Source</span>
+      <svg><use href="#ic-github"/></svg><span data-i18n="source">Source</span>
     </a>
+    <button class="icon-btn lang-btn" id="langBtn" title="Language / ენა" aria-label="Language"><span id="langLabel">ქარ</span></button>
     <button class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">
       <svg class="theme-icon-sun"><use href="#ic-sun"/></svg>
       <svg class="theme-icon-moon"><use href="#ic-moon"/></svg>
@@ -293,41 +303,54 @@
   </header>
 
   <div class="intro">
-    <div class="eyebrow"><span class="pill-dot"></span> Five agents · human-in-the-loop · live streaming</div>
-    <h1>From a topic to a publish-ready post — <span class="grad-text">agent by agent</span>.</h1>
-    <p>A pipeline of specialized Claude agents researches, writes, reviews, and revises your post. You approve the final draft before it publishes.</p>
+    <div class="eyebrow"><span class="pill-dot"></span> <span data-i18n="eyebrow">Five agents · human-in-the-loop · live streaming</span></div>
+    <h1 data-i18n="h1">From a topic to a publish-ready post — agent by agent.</h1>
+    <p data-i18n="sub">A pipeline of specialized AI agents researches, writes, reviews, and revises your post. You approve the final draft before it publishes.</p>
+    <div class="prov-line" id="provLine" hidden>
+      <span class="prov-badge" id="provBadge"><span class="pd"></span><span id="provName"></span></span>
+      <span class="prov-hint" id="provHint" hidden></span>
+    </div>
   </div>
 
   <!-- controls -->
   <div class="panel controls">
     <div class="row">
       <div class="field topic">
-        <label class="mono-label">Topic</label>
-        <input id="topic" placeholder="How RAG systems reduce LLM hallucinations" maxlength="200" />
+        <label class="mono-label" data-i18n="lTopic">Topic</label>
+        <input id="topic" data-i18n-ph="phTopic" placeholder="How RAG systems reduce LLM hallucinations" maxlength="200" />
       </div>
       <div class="field">
-        <label class="mono-label">Tone</label>
+        <label class="mono-label" data-i18n="lTone">Tone</label>
         <select id="tone">
-          <option value="informative">Informative</option>
-          <option value="conversational">Conversational</option>
-          <option value="professional">Professional</option>
-          <option value="witty">Witty</option>
-          <option value="technical">Technical</option>
+          <option value="informative" data-i18n="tInformative">Informative</option>
+          <option value="conversational" data-i18n="tConversational">Conversational</option>
+          <option value="professional" data-i18n="tProfessional">Professional</option>
+          <option value="witty" data-i18n="tWitty">Witty</option>
+          <option value="technical" data-i18n="tTechnical">Technical</option>
         </select>
       </div>
       <div class="field">
-        <label class="mono-label">Length</label>
+        <label class="mono-label" data-i18n="lLength">Length</label>
         <select id="length">
-          <option value="short">Short</option>
-          <option value="medium" selected>Medium</option>
-          <option value="long">Long</option>
+          <option value="short" data-i18n="lenShort">Short</option>
+          <option value="medium" selected data-i18n="lenMedium">Medium</option>
+          <option value="long" data-i18n="lenLong">Long</option>
         </select>
       </div>
-      <button class="btn-primary" id="runBtn">Run pipeline <svg><use href="#ic-arrow"/></svg></button>
+      <button class="btn-primary" id="runBtn"><span data-i18n="run">Run pipeline</span> <svg><use href="#ic-arrow"/></svg></button>
     </div>
-    <div class="angle field">
-      <label class="mono-label">Angle / audience <span style="color:var(--faint);letter-spacing:0">— optional</span></label>
-      <input id="angle" placeholder="for engineering managers evaluating build-vs-buy" maxlength="200" />
+    <div class="row2">
+      <div class="field">
+        <label class="mono-label" data-i18n="lAngle">Angle / audience — optional</label>
+        <input id="angle" data-i18n-ph="phAngle" placeholder="for engineering managers evaluating build-vs-buy" maxlength="200" />
+      </div>
+      <div class="field">
+        <label class="mono-label" data-i18n="lContentLang">Content language</label>
+        <select id="clang">
+          <option value="en">English</option>
+          <option value="ka">ქართული</option>
+        </select>
+      </div>
     </div>
   </div>
 
@@ -337,7 +360,7 @@
   <!-- workspace -->
   <div class="grid">
     <div>
-      <div class="banner" id="banner"><svg><use href="#ic-check2"/></svg> Published — your post is ready below.</div>
+      <div class="banner" id="banner"><svg><use href="#ic-check2"/></svg> <span data-i18n="banner">Published — your post is ready below.</span></div>
 
       <div class="card" id="docCard">
         <h2><span class="live-dot" id="docDot"></span> <span class="mono-label" id="docTitle" style="letter-spacing:.12em">Workspace</span>
@@ -345,24 +368,24 @@
         </h2>
         <div class="body">
           <div id="liveWrap"><div class="streaming" id="stream"></div></div>
-          <div class="doc empty" id="doc">The generated draft will appear here. Enter a topic and run the pipeline.</div>
+          <div class="doc empty" id="doc" data-i18n="docPlaceholder">The generated draft will appear here. Enter a topic and run the pipeline.</div>
         </div>
       </div>
 
       <!-- human-in-the-loop gate -->
       <div id="approval">
         <div class="approval-inner">
-          <h3><svg><use href="#ic-hand"/></svg> Human review — your call</h3>
-          <p>The agents converged on the draft above. Approve to publish, or send it back with notes.</p>
+          <h3><svg><use href="#ic-hand"/></svg> <span data-i18n="gateTitle">Human review — your call</span></h3>
+          <p data-i18n="gateBody">The agents converged on the draft above. Approve to publish, or send it back with notes.</p>
           <div class="approval-actions">
-            <button class="btn-good" id="approveBtn"><svg><use href="#ic-check2"/></svg> Approve &amp; publish</button>
-            <button class="btn-ghost" id="rejectBtn"><svg><use href="#ic-refresh"/></svg> Request changes</button>
+            <button class="btn-good" id="approveBtn"><svg><use href="#ic-check2"/></svg> <span data-i18n="approve">Approve &amp; publish</span></button>
+            <button class="btn-ghost" id="rejectBtn"><svg><use href="#ic-refresh"/></svg> <span data-i18n="requestChanges">Request changes</span></button>
           </div>
           <div id="rejectBox">
-            <textarea id="feedback" placeholder="What should the editor change? e.g. 'Add a concrete example in section 2 and cut the intro in half.'"></textarea>
+            <textarea id="feedback" data-i18n-ph="phFeedback" placeholder="What should the editor change? e.g. 'Add a concrete example in section 2 and cut the intro in half.'"></textarea>
             <div class="rr">
-              <button class="btn-send" id="sendReject"><svg><use href="#ic-refresh"/></svg> Send to editor</button>
-              <button class="btn-ghost" id="cancelReject"><svg><use href="#ic-x"/></svg> Cancel</button>
+              <button class="btn-send" id="sendReject"><svg><use href="#ic-refresh"/></svg> <span data-i18n="sendEditor">Send to editor</span></button>
+              <button class="btn-ghost" id="cancelReject"><svg><use href="#ic-x"/></svg> <span data-i18n="cancel">Cancel</span></button>
             </div>
           </div>
         </div>
@@ -374,7 +397,7 @@
     <!-- right rail -->
     <div>
       <div class="card" id="reviewCard">
-        <h2><svg><use href="#ic-check"/></svg> <span class="mono-label" style="letter-spacing:.12em">Reviewer verdict</span></h2>
+        <h2><svg><use href="#ic-check"/></svg> <span class="mono-label" style="letter-spacing:.12em" data-i18n="cReview">Reviewer verdict</span></h2>
         <div class="body">
           <div class="gauge">
             <svg class="ring" viewBox="0 0 88 88">
@@ -383,7 +406,7 @@
               <text class="num" x="44" y="42" text-anchor="middle" id="scoreTxt">–</text>
               <text class="den" x="44" y="59" text-anchor="middle">/ 10</text>
             </svg>
-            <div class="verdict"><b id="verdict">Awaiting review…</b><span id="revNote"></span></div>
+            <div class="verdict"><b id="verdict" data-i18n="awaitingReview">Awaiting review…</b><span id="revNote"></span></div>
           </div>
           <ul class="strengths" id="strengths"></ul>
           <div id="issues" style="margin-top:8px"></div>
@@ -391,13 +414,13 @@
       </div>
 
       <div class="card" id="sourcesCard" style="margin-top:18px">
-        <h2><svg><use href="#ic-search"/></svg> <span class="mono-label" style="letter-spacing:.12em">Sources</span></h2>
+        <h2><svg><use href="#ic-search"/></svg> <span class="mono-label" style="letter-spacing:.12em" data-i18n="cSources">Sources</span></h2>
         <div class="body" id="sources"></div>
       </div>
 
       <div class="card" style="margin-top:18px">
-        <h2><span class="live-dot" id="logDot"></span> <span class="mono-label" style="letter-spacing:.12em">Activity log</span></h2>
-        <div class="body"><div class="log" id="log"><div class="empty-hint">Events stream here in real time.</div></div></div>
+        <h2><span class="live-dot" id="logDot"></span> <span class="mono-label" style="letter-spacing:.12em" data-i18n="cLog">Activity log</span></h2>
+        <div class="body"><div class="log" id="log"><div class="empty-hint" data-i18n="logEmpty">Events stream here in real time.</div></div></div>
       </div>
     </div>
   </div>
@@ -414,6 +437,96 @@ document.getElementById("themeBtn").onclick = ()=>{
   const next = root.getAttribute("data-theme")==="light" ? "dark" : "light";
   root.setAttribute("data-theme", next);
   localStorage.setItem("macs-theme", next);
+};
+
+// ---------- i18n (English / Georgian) ----------
+const STR = {
+  en:{
+    source:"Source", eyebrow:"Five agents · human-in-the-loop · live streaming",
+    h1:"From a topic to a publish-ready post — agent by agent.",
+    sub:"A pipeline of specialized AI agents researches, writes, reviews, and revises your post. You approve the final draft before it publishes.",
+    lTopic:"Topic", phTopic:"How RAG systems reduce LLM hallucinations",
+    lTone:"Tone", tInformative:"Informative", tConversational:"Conversational", tProfessional:"Professional", tWitty:"Witty", tTechnical:"Technical",
+    lLength:"Length", lenShort:"Short", lenMedium:"Medium", lenLong:"Long", run:"Run pipeline", running:"Running…",
+    lAngle:"Angle / audience — optional", phAngle:"for engineering managers evaluating build-vs-buy",
+    lContentLang:"Content language",
+    banner:"Published — your post is ready below.",
+    docPlaceholder:"The generated draft will appear here. Enter a topic and run the pipeline.",
+    gateTitle:"Human review — your call",
+    gateBody:"The agents converged on the draft above. Approve to publish, or send it back with notes.",
+    approve:"Approve & publish", requestChanges:"Request changes",
+    phFeedback:"What should the editor change? e.g. 'Add a concrete example in section 2 and cut the intro in half.'",
+    sendEditor:"Send to editor", cancel:"Cancel",
+    cReview:"Reviewer verdict", awaitingReview:"Awaiting review…", cSources:"Sources", cLog:"Activity log",
+    logEmpty:"Events stream here in real time.",
+    ws_workspace:"Workspace", ws_researchNotes:"Research notes", ws_draft:"Draft", ws_published:"Published post",
+    st_idle:"idle", st_working:"working…", st_done:"done", st_stopped:"stopped",
+    rev_first:"first pass", rev_after:"after revision {n}",
+    ag_researcher_name:"Researcher", ag_researcher_role:"gathers sources",
+    ag_writer_name:"Writer", ag_writer_role:"drafts the post",
+    ag_reviewer_name:"Reviewer", ag_reviewer_role:"scores & critiques",
+    ag_editor_name:"Editor", ag_editor_role:"applies fixes",
+    ag_publisher_name:"Publisher", ag_publisher_role:"final polish",
+    m_started:"Pipeline started · ", m_searching:"Searching: ", m_sources:"Collected {n} source(s)",
+    m_working:"{a} is working", m_revision:"Revision {n} — critique sent to the editor",
+    m_scored:"Scored {s}/10 — {v}", m_gate:"Waiting for your decision",
+    m_approved:"Approved — sending to publisher", m_reject:"Changes requested — back to the editor",
+    m_complete:"Pipeline complete", noIssues:"No blocking issues.",
+    offlineHint:"Add a free key for real generation — see .env.example",
+  },
+  ka:{
+    source:"წყარო", eyebrow:"ხუთი აგენტი · human-in-the-loop · ცოცხალი streaming",
+    h1:"თემიდან გამოსაქვეყნებელ პოსტამდე — აგენტ-აგენტად.",
+    sub:"სპეციალიზებული AI აგენტების კონვეიერი იკვლევს, წერს, აფასებს და ასწორებს შენს პოსტს. საბოლოო დრაფტს შენ ამტკიცებ გამოქვეყნებამდე.",
+    lTopic:"თემა", phTopic:"როგორ ამცირებს RAG სისტემები LLM-ის ჰალუცინაციებს",
+    lTone:"ტონი", tInformative:"ინფორმაციული", tConversational:"სასაუბრო", tProfessional:"პროფესიული", tWitty:"მახვილგონივრული", tTechnical:"ტექნიკური",
+    lLength:"სიგრძე", lenShort:"მოკლე", lenMedium:"საშუალო", lenLong:"გრძელი", run:"კონვეიერის გაშვება", running:"მუშაობს…",
+    lAngle:"კუთხე / აუდიტორია — არასავალდებულო", phAngle:"მაგ. build-vs-buy-ს შემფასებელი ინჟინერ-მენეჯერებისთვის",
+    lContentLang:"კონტენტის ენა",
+    banner:"გამოქვეყნდა — შენი პოსტი მზადაა ქვემოთ.",
+    docPlaceholder:"დაგენერირებული დრაფტი აქ გამოჩნდება. შეიყვანე თემა და გაუშვი კონვეიერი.",
+    gateTitle:"ადამიანის განხილვა — შენი გადაწყვეტილება",
+    gateBody:"აგენტებმა დაასრულეს ზემოთ მოცემულ დრაფტზე. დაამტკიცე გამოსაქვეყნებლად ან დააბრუნე შენიშვნებით.",
+    approve:"დამტკიცება და გამოქვეყნება", requestChanges:"ცვლილებების მოთხოვნა",
+    phFeedback:"რა უნდა შეცვალოს ედიტორმა? მაგ. „მე-2 სექციაში დაამატე კონკრეტული მაგალითი და შესავალი განახევრე.“",
+    sendEditor:"ედიტორთან გაგზავნა", cancel:"გაუქმება",
+    cReview:"შემფასებლის ვერდიქტი", awaitingReview:"შეფასების მოლოდინში…", cSources:"წყაროები", cLog:"აქტივობის ლოგი",
+    logEmpty:"მოვლენები აქ გამოჩნდება რეალურ დროში.",
+    ws_workspace:"სამუშაო სივრცე", ws_researchNotes:"კვლევის ჩანაწერები", ws_draft:"დრაფტი", ws_published:"გამოქვეყნებული პოსტი",
+    st_idle:"მოცდაში", st_working:"მუშაობს…", st_done:"დასრულდა", st_stopped:"შეჩერდა",
+    rev_first:"პირველი გავლა", rev_after:"რევიზია {n}-ის შემდეგ",
+    ag_researcher_name:"მკვლევარი", ag_researcher_role:"აგროვებს წყაროებს",
+    ag_writer_name:"მწერალი", ag_writer_role:"წერს პოსტს",
+    ag_reviewer_name:"შემფასებელი", ag_reviewer_role:"აფასებს და აკრიტიკებს",
+    ag_editor_name:"რედაქტორი", ag_editor_role:"ასწორებს",
+    ag_publisher_name:"გამომქვეყნებელი", ag_publisher_role:"საბოლოო გაპრიალება",
+    m_started:"კონვეიერი დაიწყო · ", m_searching:"ძებნა: ", m_sources:"შეგროვდა {n} წყარო",
+    m_working:"{a} მუშაობს", m_revision:"რევიზია {n} — კრიტიკა გაეგზავნა ედიტორს",
+    m_scored:"შეფასდა {s}/10 — {v}", m_gate:"შენი გადაწყვეტილების მოლოდინში",
+    m_approved:"დამტკიცდა — ეგზავნება გამომქვეყნებელს", m_reject:"მოთხოვნილია ცვლილებები — ბრუნდება ედიტორთან",
+    m_complete:"კონვეიერი დასრულდა", noIssues:"არ არის ბლოკირების საკითხები.",
+    offlineHint:"დაამატე უფასო გასაღები რეალური გენერაციისთვის — იხ. .env.example",
+  },
+};
+let lang = localStorage.getItem("macs-lang")==="ka" ? "ka" : "en";
+function t(key, vars){
+  let s = (STR[lang] && STR[lang][key]) || STR.en[key] || key;
+  if(vars) for(const k in vars) s = s.replace("{"+k+"}", vars[k]);
+  return s;
+}
+function applyStatic(){
+  root.setAttribute("lang", lang);
+  document.querySelectorAll("[data-i18n]").forEach(el=>{ el.textContent = t(el.getAttribute("data-i18n")); });
+  document.querySelectorAll("[data-i18n-ph]").forEach(el=>{ el.setAttribute("placeholder", t(el.getAttribute("data-i18n-ph"))); });
+  document.getElementById("langLabel").textContent = lang==="en" ? "ქარ" : "EN";
+}
+document.getElementById("langBtn").onclick = ()=>{
+  lang = lang==="en" ? "ka" : "en";
+  localStorage.setItem("macs-lang", lang);
+  document.getElementById("clang").value = lang;  // default content language follows UI
+  applyStatic();
+  relabelPipeline();
+  renderProv();
 };
 
 // ---------- agent metadata ----------
@@ -435,13 +548,27 @@ AGENTS.forEach((a,i)=>{
     <div class="top"><span class="idx">0${i+1}</span>
       <span class="check"><svg><use href="#ic-check2"/></svg></span></div>
     <div class="ico"><svg><use href="#${a.icon}"/></svg></div>
-    <div class="nm">${a.name}</div><div class="role">${a.role}</div>
-    <div class="st" id="st-${a.id}">idle</div>`;
+    <div class="nm">${t("ag_"+a.id+"_name")}</div><div class="role">${t("ag_"+a.id+"_role")}</div>
+    <div class="st" id="st-${a.id}">${t("st_idle")}</div>`;
   pipeEl.appendChild(n);
   if(i<AGENTS.length-1){
     const c=document.createElement("div"); c.className="connector"; c.id="conn-"+i; pipeEl.appendChild(c);
   }
 });
+const agentName = id => t("ag_"+id+"_name");
+let docTitleKey = "ws_workspace";
+function setDocTitle(key){ docTitleKey = key; document.getElementById("docTitle").textContent = t(key); }
+function relabelPipeline(){
+  AGENTS.forEach(a=>{
+    const n = document.getElementById("node-"+a.id); if(!n) return;
+    n.querySelector(".nm").textContent = t("ag_"+a.id+"_name");
+    n.querySelector(".role").textContent = t("ag_"+a.id+"_role");
+    const st = document.getElementById("st-"+a.id);
+    st.textContent = n.classList.contains("active") ? t("st_working")
+                    : n.classList.contains("done") ? t("st_done") : t("st_idle");
+  });
+  setDocTitle(docTitleKey);
+}
 
 // ---------- tiny markdown renderer (self-contained, no CDN) ----------
 function esc(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
@@ -481,7 +608,8 @@ runBtn.onclick = start;
 $("topic").addEventListener("keydown", e=>{ if(e.key==="Enter") start(); });
 
 function collectOptions(){
-  return {topic:$("topic").value.trim(), tone:$("tone").value, length:$("length").value, angle:$("angle").value.trim()||null};
+  return {topic:$("topic").value.trim(), tone:$("tone").value, length:$("length").value,
+          angle:$("angle").value.trim()||null, language:$("clang").value};
 }
 
 // EventSource can't POST, so we stream the fetch() response body and parse SSE frames.
@@ -506,12 +634,12 @@ async function start(){
   if(o.topic.length<3){ $("topic").focus(); return; }
   resetUI();
   curOptions=o;
-  log("start", `Pipeline started · <span class="q">${escapeHtml(o.topic)}</span>`);
+  log("start", `${t("m_started")}<span class="q">${escapeHtml(o.topic)}</span>`);
   runPhase("/api/generate", o);
 }
 
 async function runPhase(url, body){
-  runBtn.disabled=true; runBtn.querySelector("svg")?.remove(); runBtn.childNodes[0].nodeValue="Running… ";
+  runBtn.disabled=true; runBtn.innerHTML=t("running");
   logDot.classList.add("on"); docDot.classList.add("on");
   try{ await streamPost(url, body, handle); }
   catch(e){ showError(e.message); }
@@ -522,12 +650,12 @@ async function runPhase(url, body){
 function handle(e){
   switch(e.type){
     case "stage_start": onStageStart(e.agent, e.label); break;
-    case "search": log("search", `Searching: <span class="q">"${escapeHtml(e.query)}"</span>`, "researcher"); break;
-    case "sources": renderSources(e.sources); log("sources", `Collected ${e.sources.length} source${e.sources.length>1?"s":""}`, "researcher"); break;
+    case "search": log("search", `${t("m_searching")}<span class="q">"${escapeHtml(e.query)}"</span>`, "researcher"); break;
+    case "sources": renderSources(e.sources); log("sources", t("m_sources",{n:e.sources.length}), "researcher"); break;
     case "token": onToken(e.agent, e.text); break;
     case "stage_output": onStageOutput(e.agent, e.content); break;
     case "review": renderReview(e); break;
-    case "revision_start": log("revise", `Revision ${e.cycle} — critique sent to the editor`, "editor"); break;
+    case "revision_start": log("revise", t("m_revision",{n:e.cycle}), "editor"); break;
     case "awaiting_approval": onAwaitApproval(e.draft); break;
     case "log": log(e.level||"info", escapeHtml(e.message)); break;
     case "done": onDone(e); break;
@@ -536,7 +664,7 @@ function handle(e){
 }
 
 function onError(msg){
-  if(activeAgent){ $("node-"+activeAgent).classList.remove("active"); $("st-"+activeAgent).textContent="stopped"; activeAgent=null; }
+  if(activeAgent){ $("node-"+activeAgent).classList.remove("active"); $("st-"+activeAgent).textContent=t("st_stopped"); activeAgent=null; }
   liveWrap.style.display="none"; doc.style.display=""; stageChip.hidden=true;
   showError(msg); finish();
 }
@@ -546,13 +674,13 @@ function onStageStart(agent, label){
   activeAgent=agent;
   const node=$("node-"+agent);
   node.classList.remove("done"); node.classList.add("active");
-  $("st-"+agent).textContent = "working…";
+  $("st-"+agent).textContent = t("st_working");
   const idx=AGENTS.findIndex(a=>a.id===agent);
   for(let i=0;i<idx;i++) $("conn-"+i)?.classList.add("filled");
   streamBuf=""; stream.innerHTML=""; liveWrap.style.display="none";
-  stageChip.hidden=false; stageName.textContent=label;
-  docTitle.textContent = agent==="researcher" ? "Research notes" : "Draft";
-  log("stage", `<b>${label}</b> is working`, agent);
+  stageChip.hidden=false; stageName.textContent=agentName(agent);
+  setDocTitle(agent==="researcher" ? "ws_researchNotes" : "ws_draft");
+  log("stage", t("m_working",{a:`<b>${agentName(agent)}</b>`}), agent);
 }
 
 function onToken(agent, text){
@@ -569,12 +697,12 @@ function onStageOutput(agent, content){
   liveWrap.style.display="none"; doc.style.display=""; stageChip.hidden=true;
   doc.classList.remove("empty");
   doc.innerHTML = md(content);
-  $("st-"+agent).textContent = "done";
+  $("st-"+agent).textContent = t("st_done");
 }
 
 function markDone(agent){
   const node=$("node-"+agent);
-  if(node){ node.classList.remove("active"); node.classList.add("done"); const st=$("st-"+agent); if(st.textContent==="working…") st.textContent="done"; }
+  if(node){ node.classList.remove("active"); node.classList.add("done"); $("st-"+agent).textContent=t("st_done"); }
 }
 
 function renderReview(e){
@@ -585,12 +713,12 @@ function renderReview(e){
   fg.style.strokeDashoffset = 239 - (239*s/10);
   fg.classList.toggle("pass", s>=8);
   $("verdict").textContent = e.verdict || "—";
-  $("revNote").textContent = e.revision>0 ? `after revision ${e.revision}` : "first pass";
+  $("revNote").textContent = e.revision>0 ? t("rev_after",{n:e.revision}) : t("rev_first");
   const str=$("strengths"); str.innerHTML=(e.strengths||[]).map(x=>`<li>${escapeHtml(x)}</li>`).join("");
   const iss=$("issues"); iss.innerHTML=(e.issues||[]).map(x=>
     `<div class="issue"><span class="sev ${x.severity}">${x.severity}</span><div><div>${escapeHtml(x.issue)}</div><div class="fix">${escapeHtml(x.fix)}</div></div></div>`).join("")
-    || `<div class="empty-hint" style="padding:4px 0">No blocking issues.</div>`;
-  log("review", `Scored <b>${s}/10</b> — ${escapeHtml((e.verdict||"").slice(0,58))}`, "reviewer");
+    || `<div class="empty-hint" style="padding:4px 0">${t("noIssues")}</div>`;
+  log("review", t("m_scored",{s:`<b>${s}</b>`, v:escapeHtml((e.verdict||"").slice(0,58))}), "reviewer");
 }
 
 function renderSources(sources){
@@ -608,11 +736,11 @@ function onAwaitApproval(draft){
   liveWrap.style.display="none"; doc.style.display=""; stageChip.hidden=true;
   approval.style.display="block";
   approval.scrollIntoView({behavior:"smooth", block:"center"});
-  log("gate", "Waiting for your decision", "reviewer");
+  log("gate", t("m_gate"), "reviewer");
 }
 $("approveBtn").onclick = ()=>{
   approval.style.display="none";
-  log("approve", "Approved — sending to publisher", "publisher");
+  log("approve", t("m_approved"), "publisher");
   runPhase("/api/publish", {...curOptions, draft:curDraft});
 };
 $("rejectBtn").onclick = ()=>{ $("rejectBox").style.display="block"; $("feedback").focus(); };
@@ -620,7 +748,7 @@ $("cancelReject").onclick = ()=>{ $("rejectBox").style.display="none"; };
 $("sendReject").onclick = ()=>{
   const fb=$("feedback").value.trim();
   approval.style.display="none"; $("rejectBox").style.display="none"; $("feedback").value="";
-  log("reject", "Changes requested — back to the editor", "editor");
+  log("reject", t("m_reject"), "editor");
   runPhase("/api/revise", {...curOptions, draft:curDraft, feedback:fb||null});
 };
 
@@ -629,16 +757,16 @@ function onDone(e){
   markDone("publisher");
   doc.classList.remove("empty"); doc.innerHTML = md(e.final);
   $("docCard").classList.add("published");
-  docTitle.textContent="Published post"; docDot.classList.remove("on");
+  setDocTitle("ws_published"); docDot.classList.remove("on");
   banner.style.display="flex";
   banner.scrollIntoView({behavior:"smooth", block:"start"});
   for(let i=0;i<AGENTS.length-1;i++) $("conn-"+i).classList.add("filled");
-  log("done", "Pipeline complete", "publisher");
+  log("done", t("m_complete"), "publisher");
 }
 function finish(){
   logDot.classList.remove("on"); docDot.classList.remove("on");
   runBtn.disabled=false;
-  runBtn.innerHTML='Run pipeline <svg><use href="#ic-arrow"/></svg>';
+  runBtn.innerHTML=`<span>${t("run")}</span> <svg><use href="#ic-arrow"/></svg>`;
 }
 
 // ---------- helpers ----------
@@ -659,17 +787,37 @@ function showError(msg){
 
 function resetUI(){
   curDraft=""; activeAgent=null; streamBuf=""; firstLog=true;
-  doc.classList.add("empty"); doc.textContent="Working…"; doc.style.display="";
+  doc.classList.add("empty"); doc.textContent=t("running"); doc.style.display="";
   liveWrap.style.display="none"; stream.innerHTML=""; stageChip.hidden=true;
   approval.style.display="none"; $("rejectBox").style.display="none";
   banner.style.display="none"; errEl.style.display="none";
-  $("docCard").classList.remove("published"); docTitle.textContent="Workspace"; $("feedback").value="";
+  $("docCard").classList.remove("published"); setDocTitle("ws_workspace"); $("feedback").value="";
   $("reviewCard").style.display="none"; $("sourcesCard").style.display="none";
   $("scoreTxt").textContent="–"; $("ringFg").style.strokeDashoffset=239; $("ringFg").classList.remove("pass");
-  logEl.innerHTML='<div class="empty-hint">Events stream here in real time.</div>';
-  AGENTS.forEach(a=>{ const n=$("node-"+a.id); n.classList.remove("active","done"); $("st-"+a.id).textContent="idle"; });
+  logEl.innerHTML=`<div class="empty-hint">${t("logEmpty")}</div>`;
+  AGENTS.forEach(a=>{ const n=$("node-"+a.id); n.classList.remove("active","done"); $("st-"+a.id).textContent=t("st_idle"); });
   for(let i=0;i<AGENTS.length-1;i++) $("conn-"+i).classList.remove("filled");
 }
+
+// ---------- provider badge ----------
+let provState=null;
+function renderProv(){
+  if(!provState) return;
+  $("provName").textContent = provState.label;
+  const off = provState.provider==="offline";
+  $("provBadge").classList.toggle("offline", off);
+  $("provHint").hidden = !off;
+  if(off) $("provHint").innerHTML = t("offlineHint");
+  $("provLine").hidden = false;
+}
+async function loadProviderBadge(){
+  try{ const r=await fetch("/api/config"); if(r.ok){ provState=await r.json(); renderProv(); } }catch(_){}
+}
+
+// ---------- init ----------
+$("clang").value = lang;   // content language defaults to the UI language
+applyStatic();
+loadProviderBadge();
 </script>
 </body>
 </html>
