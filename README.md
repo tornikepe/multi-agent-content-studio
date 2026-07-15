@@ -77,12 +77,14 @@ cp .env.example .env
 
 | Provider | Free? | Get a key | Notes |
 |---|---|---|---|
-| **Groq** | ✅ free, no card | [console.groq.com/keys](https://console.groq.com/keys) | Fast (Llama 3.3 70B) — recommended |
-| **Gemini** | ✅ free | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) | Great for Georgian |
+| **Gemini** | ✅ free, no card | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) | **Recommended** — high free limits run the whole pipeline; great Georgian |
+| **Groq** | ✅ free, no card | [console.groq.com/keys](https://console.groq.com/keys) | Very fast (Llama 3.3 70B); tighter token limits |
 | **Claude** | paid | [console.anthropic.com](https://console.anthropic.com/) | Best quality + live web search |
 
 Paste it into `.env` and restart. Free providers are auto-detected first, so
-adding a Groq key "just works". The UI shows which provider is active.
+adding a key "just works". The UI shows which provider is active. Rate-limited
+calls are retried automatically, and a run always completes (falling back to the
+offline demo for any step a free provider can't serve).
 
 > **Language:** toggle the UI between **English / ქართული** (top-right), and pick
 > the **Content language** so the agents write the post in English or Georgian.

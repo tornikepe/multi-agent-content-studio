@@ -57,9 +57,12 @@
   /* ---------- header ---------- */
   header{display:flex; align-items:center; gap:14px; margin-bottom:22px}
   .logo{display:inline-flex; align-items:center; gap:11px; font-weight:800; font-size:19px; letter-spacing:-.02em}
-  .logo-mark{width:34px; height:34px; flex:none; filter:drop-shadow(0 4px 12px rgba(99,102,241,.32))}
+  .logo-mark{width:34px; height:34px; flex:none; animation:markGlow 4.5s ease-in-out infinite}
+  @keyframes markGlow{0%,100%{filter:drop-shadow(0 4px 12px rgba(99,102,241,.3))}50%{filter:drop-shadow(0 5px 20px rgba(99,102,241,.6))}}
   .logo-text b{font-weight:800}
-  .logo-text .grad-text{background:linear-gradient(135deg,var(--accent),var(--accent-2)); -webkit-background-clip:text; background-clip:text; color:transparent}
+  .logo-text .grad-text{background:linear-gradient(135deg,var(--accent),var(--accent-2),var(--accent)); background-size:200% auto; -webkit-background-clip:text; background-clip:text; color:transparent; animation:sheen 5s linear infinite}
+  @keyframes sheen{to{background-position:200% center}}
+  @media (prefers-reduced-motion:reduce){ .logo-mark,.logo-text .grad-text{animation:none} }
   .spacer{flex:1}
   .icon-btn{width:38px; height:38px; display:grid; place-items:center; border-radius:var(--radius-sm); border:1px solid var(--border); background:color-mix(in srgb,var(--panel) 55%,transparent); color:var(--muted); cursor:pointer; transition:border-color .15s,color .15s,background .15s; backdrop-filter:blur(6px)}
   .icon-btn:hover{border-color:var(--accent); color:var(--text); background:var(--accent-soft)}
@@ -104,8 +107,15 @@
   .btn-primary svg{width:16px; height:16px}
 
   /* ---------- pipeline ---------- */
-  .pipeline{display:flex; align-items:stretch; margin:24px 0 20px; overflow-x:auto; padding:2px}
-  .node{flex:1 1 0; min-width:148px; background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:14px; position:relative; transition:border-color .35s,box-shadow .35s,background .35s,transform .3s}
+  .pipeline{display:flex; align-items:stretch; margin:24px 0 20px; overflow-x:auto; padding:2px; position:relative}
+  /* a glowing pulse of "data" flows through the pipeline when idle (hidden behind
+     the cards, so it reads as a signal hopping between agents through the connectors) */
+  .pipeline::after{content:""; position:absolute; z-index:0; top:50%; left:0; width:7px; height:7px; margin-top:-3.5px; border-radius:50%; background:var(--accent); box-shadow:0 0 12px 3px color-mix(in srgb,var(--accent) 60%,transparent); opacity:0; pointer-events:none; animation:travel 4.2s cubic-bezier(.45,.05,.55,.95) infinite}
+  .pipeline.running::after{animation:none; opacity:0}
+  @keyframes travel{0%{left:1%; opacity:0} 6%{opacity:1} 94%{opacity:1} 100%{left:99%; opacity:0}}
+  @media (prefers-reduced-motion:reduce){ .pipeline::after,.aurora .blob{animation:none} }
+  .node{flex:1 1 0; min-width:148px; background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:14px; position:relative; z-index:1; transition:border-color .35s,box-shadow .35s,background .35s,transform .3s; animation:nodeIn .5s cubic-bezier(.22,1,.36,1) backwards; animation-delay:var(--in,0s)}
+  @keyframes nodeIn{from{opacity:0; transform:translateY(12px)}to{opacity:1; transform:none}}
   .node .top{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px}
   .node .idx{font-family:var(--mono); font-size:11px; color:var(--faint); letter-spacing:.06em}
   .node .ico{width:34px; height:34px; border-radius:10px; display:grid; place-items:center; border:1px solid var(--border); color:var(--muted); background:var(--panel-2); transition:color .35s,border-color .35s,background .35s; margin-bottom:9px}
@@ -303,7 +313,6 @@
   </header>
 
   <div class="intro">
-    <div class="eyebrow"><span class="pill-dot"></span> <span data-i18n="eyebrow">Five agents · human-in-the-loop · live streaming</span></div>
     <h1 data-i18n="h1">From a topic to a publish-ready post — agent by agent.</h1>
     <p data-i18n="sub">A pipeline of specialized AI agents researches, writes, reviews, and revises your post. You approve the final draft before it publishes.</p>
     <div class="prov-line" id="provLine" hidden>
@@ -472,6 +481,7 @@ const STR = {
     m_scored:"Scored {s}/10 — {v}", m_gate:"Waiting for your decision",
     m_approved:"Approved — sending to publisher", m_reject:"Changes requested — back to the editor",
     m_complete:"Pipeline complete", noIssues:"No blocking issues.",
+    provLive:"Live", provOffline:"Offline demo",
     offlineHint:"Add a free key for real generation — see .env.example",
   },
   ka:{
@@ -505,6 +515,7 @@ const STR = {
     m_scored:"შეფასდა {s}/10 — {v}", m_gate:"შენი გადაწყვეტილების მოლოდინში",
     m_approved:"დამტკიცდა — ეგზავნება გამომქვეყნებელს", m_reject:"მოთხოვნილია ცვლილებები — ბრუნდება ედიტორთან",
     m_complete:"კონვეიერი დასრულდა", noIssues:"არ არის ბლოკირების საკითხები.",
+    provLive:"აქტიური", provOffline:"Offline დემო",
     offlineHint:"დაამატე უფასო გასაღები რეალური გენერაციისთვის — იხ. .env.example",
   },
 };
@@ -544,6 +555,7 @@ const pipeEl = document.getElementById("pipeline");
 AGENTS.forEach((a,i)=>{
   const n = document.createElement("div");
   n.className = "node"; n.id = "node-"+a.id;
+  n.style.setProperty("--in", (i*0.09)+"s");   // staggered entrance
   n.innerHTML = `
     <div class="top"><span class="idx">0${i+1}</span>
       <span class="check"><svg><use href="#ic-check2"/></svg></span></div>
@@ -641,6 +653,7 @@ async function start(){
 async function runPhase(url, body){
   runBtn.disabled=true; runBtn.innerHTML=t("running");
   logDot.classList.add("on"); docDot.classList.add("on");
+  pipeEl.classList.add("running");   // pause the idle flow-pulse while working
   try{ await streamPost(url, body, handle); }
   catch(e){ showError(e.message); }
   finally{ finish(); }
@@ -765,6 +778,7 @@ function onDone(e){
 }
 function finish(){
   logDot.classList.remove("on"); docDot.classList.remove("on");
+  pipeEl.classList.remove("running");
   runBtn.disabled=false;
   runBtn.innerHTML=`<span>${t("run")}</span> <svg><use href="#ic-arrow"/></svg>`;
 }
@@ -803,8 +817,8 @@ function resetUI(){
 let provState=null;
 function renderProv(){
   if(!provState) return;
-  $("provName").textContent = provState.label;
   const off = provState.provider==="offline";
+  $("provName").textContent = off ? t("provOffline") : t("provLive");
   $("provBadge").classList.toggle("offline", off);
   $("provHint").hidden = !off;
   if(off) $("provHint").innerHTML = t("offlineHint");

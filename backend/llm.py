@@ -77,6 +77,61 @@ def is_fatal_account_error(e: Exception) -> bool:
 
 
 # --------------------------------------------------------------------------- #
+# HTTP retry helpers (handle free-tier rate limits gracefully)
+# --------------------------------------------------------------------------- #
+
+_RETRY_CODES = {429, 500, 502, 503}
+
+
+def _retry_wait(resp, fallback: float) -> float:
+    ra = resp.headers.get("retry-after")
+    if ra:
+        try:
+            return min(float(ra), 15.0)
+        except ValueError:
+            pass
+    return fallback
+
+
+async def _post_retry(url: str, headers: dict, payload: dict):
+    delay, last = 2.0, None
+    async with httpx.AsyncClient(timeout=180) as c:
+        for attempt in range(3):
+            r = await c.post(url, headers=headers, json=payload)
+            if r.status_code in _RETRY_CODES and attempt < 2:
+                last = httpx.HTTPStatusError(str(r.status_code), request=r.request, response=r)
+                await asyncio.sleep(_retry_wait(r, delay)); delay *= 2; continue
+            r.raise_for_status()
+            return r
+    raise last
+
+
+async def _stream_retry(url: str, headers: dict, payload: dict, parse, on_delta) -> str:
+    """Stream an SSE response; retry the whole request on 429/5xx before any token is emitted."""
+    delay, last = 2.0, None
+    for attempt in range(3):
+        wait, parts = None, []
+        async with httpx.AsyncClient(timeout=180) as c:
+            async with c.stream("POST", url, headers=headers, json=payload) as r:
+                if r.status_code >= 400:
+                    await r.aread()
+                    err = httpx.HTTPStatusError(str(r.status_code), request=r.request, response=r)
+                    if r.status_code in _RETRY_CODES and attempt < 2:
+                        last, wait = err, _retry_wait(r, delay)
+                    else:
+                        raise err
+                else:
+                    async for line in r.aiter_lines():
+                        d = parse(line)
+                        if d:
+                            parts.append(d)
+                            await on_delta(d)
+                    return "".join(parts)
+        await asyncio.sleep(wait); delay *= 2
+    raise last
+
+
+# --------------------------------------------------------------------------- #
 # Provider interface
 # --------------------------------------------------------------------------- #
 
@@ -129,29 +184,27 @@ class _OpenAICompatProvider(Provider):
     url = ""
     api_key = ""
 
+    def _headers(self):
+        return {"Authorization": f"Bearer {self.api_key}"}
+
+    @staticmethod
+    def _parse(line: str):
+        if not line.startswith("data: "):
+            return None
+        data = line[6:].strip()
+        if data == "[DONE]":
+            return None
+        try:
+            return json.loads(data)["choices"][0]["delta"].get("content")
+        except Exception:
+            return None
+
     async def stream(self, *, system, user, on_delta, max_tokens=2600, kind=None, lang="en"):
         payload = {
             "model": self.model, "max_tokens": max_tokens, "stream": True,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
         }
-        parts: list[str] = []
-        async with httpx.AsyncClient(timeout=180) as c:
-            async with c.stream("POST", self.url, headers={"Authorization": f"Bearer {self.api_key}"}, json=payload) as r:
-                r.raise_for_status()
-                async for line in r.aiter_lines():
-                    if not line.startswith("data: "):
-                        continue
-                    data = line[6:].strip()
-                    if data == "[DONE]":
-                        break
-                    try:
-                        delta = json.loads(data)["choices"][0]["delta"].get("content")
-                    except Exception:
-                        continue
-                    if delta:
-                        parts.append(delta)
-                        await on_delta(delta)
-        return "".join(parts)
+        return await _stream_retry(self.url, self._headers(), payload, self._parse, on_delta)
 
     async def complete_json(self, *, system, user, schema, max_tokens=4000, lang="en"):
         sys2 = system + "\n\nRespond with ONLY a JSON object matching this schema:\n" + json.dumps(schema)
@@ -160,10 +213,8 @@ class _OpenAICompatProvider(Provider):
             "response_format": {"type": "json_object"},
             "messages": [{"role": "system", "content": sys2}, {"role": "user", "content": user}],
         }
-        async with httpx.AsyncClient(timeout=180) as c:
-            r = await c.post(self.url, headers={"Authorization": f"Bearer {self.api_key}"}, json=payload)
-            r.raise_for_status()
-            return json.loads(r.json()["choices"][0]["message"]["content"])
+        r = await _post_retry(self.url, self._headers(), payload)
+        return json.loads(r.json()["choices"][0]["message"]["content"])
 
 
 class GroqProvider(_OpenAICompatProvider):
@@ -183,6 +234,19 @@ class GeminiProvider(Provider):
         self.model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
         self.base = "https://generativelanguage.googleapis.com/v1beta/models"
 
+    @staticmethod
+    def _parse(line: str):
+        if not line.startswith("data: "):
+            return None
+        try:
+            obj = json.loads(line[6:])
+        except Exception:
+            return None
+        out = "".join(p.get("text", "")
+                      for cand in obj.get("candidates", [])
+                      for p in cand.get("content", {}).get("parts", []))
+        return out or None
+
     async def stream(self, *, system, user, on_delta, max_tokens=2600, kind=None, lang="en"):
         url = f"{self.base}/{self.model}:streamGenerateContent?alt=sse&key={self.api_key}"
         payload = {
@@ -190,24 +254,7 @@ class GeminiProvider(Provider):
             "contents": [{"role": "user", "parts": [{"text": user}]}],
             "generationConfig": {"maxOutputTokens": max_tokens},
         }
-        parts: list[str] = []
-        async with httpx.AsyncClient(timeout=180) as c:
-            async with c.stream("POST", url, json=payload) as r:
-                r.raise_for_status()
-                async for line in r.aiter_lines():
-                    if not line.startswith("data: "):
-                        continue
-                    try:
-                        obj = json.loads(line[6:])
-                    except Exception:
-                        continue
-                    for cand in obj.get("candidates", []):
-                        for p in cand.get("content", {}).get("parts", []):
-                            t = p.get("text")
-                            if t:
-                                parts.append(t)
-                                await on_delta(t)
-        return "".join(parts)
+        return await _stream_retry(url, {}, payload, self._parse, on_delta)
 
     async def complete_json(self, *, system, user, schema, max_tokens=4000, lang="en"):
         url = f"{self.base}/{self.model}:generateContent?key={self.api_key}"
@@ -217,10 +264,8 @@ class GeminiProvider(Provider):
             "contents": [{"role": "user", "parts": [{"text": user}]}],
             "generationConfig": {"maxOutputTokens": max_tokens, "response_mime_type": "application/json"},
         }
-        async with httpx.AsyncClient(timeout=180) as c:
-            r = await c.post(url, json=payload)
-            r.raise_for_status()
-            data = r.json()
+        r = await _post_retry(url, {}, payload)
+        data = r.json()
         text = "".join(p.get("text", "") for p in data["candidates"][0]["content"]["parts"])
         return json.loads(text)
 
@@ -310,14 +355,17 @@ def _detect() -> Provider:
             return _build(forced)
         except Exception:
             return OfflineProvider()
-    # Free providers first, so "add a free key → it works" holds.
-    if os.getenv("GROQ_API_KEY"):
-        return GroqProvider()
+    # Gemini first: its free tier has far higher token limits than Groq's, so the
+    # multi-call pipeline runs without rate-limiting (and within serverless timeouts).
     if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"):
         return GeminiProvider()
+    if os.getenv("GROQ_API_KEY"):
+        return GroqProvider()
     if os.getenv("ANTHROPIC_API_KEY"):
         return AnthropicProvider()
     return OfflineProvider()
 
 
 provider = _detect()
+# Always-available fallback so a rate-limited free provider never hard-fails a run.
+offline_provider = provider if provider.name == "offline" else OfflineProvider()

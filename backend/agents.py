@@ -10,7 +10,7 @@ Writer/Editor/Publisher stream token-by-token; Reviewer returns a structured JSO
 from __future__ import annotations
 
 from . import config
-from .llm import is_fatal_account_error, provider
+from .llm import is_fatal_account_error, offline_provider, provider
 from .models import Emitter
 
 
@@ -22,6 +22,26 @@ async def _token_emitter(em: Emitter, agent: str):
 
 def _lang(options: dict) -> str:
     return options.get("language", "en")
+
+
+# Resilient wrappers: on a non-fatal provider error (rate limit / transient),
+# fall back to the offline provider so a run always completes instead of erroring.
+async def _stream(**kw) -> str:
+    try:
+        return await provider.stream(**kw)
+    except Exception as e:
+        if is_fatal_account_error(e):
+            raise
+        return await offline_provider.stream(**kw)
+
+
+async def _json(**kw) -> dict:
+    try:
+        return await provider.complete_json(**kw)
+    except Exception as e:
+        if is_fatal_account_error(e):
+            raise
+        return await offline_provider.complete_json(**kw)
 
 
 # --- Researcher --------------------------------------------------------------
@@ -46,7 +66,7 @@ async def run_researcher(em: Emitter, topic: str, options: dict) -> tuple[str, l
 
     # No web search (free/offline providers, or Claude web search unavailable):
     # produce research notes from model knowledge.
-    notes = await provider.stream(
+    notes = await _stream(
         system=config.sys(config.FALLBACK_RESEARCHER_SYSTEM, options),
         user=config.researcher_user(topic, options),
         on_delta=await _token_emitter(em, "researcher"),
@@ -93,7 +113,7 @@ async def _web_research(em: Emitter, topic: str, options: dict) -> tuple[str, li
 
 async def run_writer(em: Emitter, topic: str, options: dict, notes: str) -> str:
     await em.stage_start("writer", "Writer")
-    draft = await provider.stream(
+    draft = await _stream(
         system=config.sys(config.WRITER_SYSTEM, options),
         user=config.writer_user(topic, options, notes),
         on_delta=await _token_emitter(em, "writer"),
@@ -107,7 +127,7 @@ async def run_writer(em: Emitter, topic: str, options: dict, notes: str) -> str:
 
 async def run_reviewer(em: Emitter, topic: str, options: dict, draft: str, cycle: int = 0) -> dict:
     await em.stage_start("reviewer", "Reviewer" if cycle == 0 else f"Reviewer · re-check {cycle}")
-    data = await provider.complete_json(
+    data = await _json(
         system=config.sys(config.REVIEWER_SYSTEM, options),
         user=config.reviewer_user(topic, options, draft),
         schema=config.REVIEW_SCHEMA, lang=_lang(options),
@@ -125,7 +145,7 @@ async def run_reviewer(em: Emitter, topic: str, options: dict, draft: str, cycle
 async def run_editor(em: Emitter, topic: str, options: dict, draft: str, review: dict, cycle: int) -> str:
     await em.emit("revision_start", cycle=cycle)
     await em.stage_start("editor", f"Editor · revision {cycle}")
-    revised = await provider.stream(
+    revised = await _stream(
         system=config.sys(config.EDITOR_SYSTEM, options),
         user=config.editor_user(topic, options, draft, review),
         on_delta=await _token_emitter(em, "editor"),
@@ -139,7 +159,7 @@ async def run_editor(em: Emitter, topic: str, options: dict, draft: str, review:
 
 async def run_publisher(em: Emitter, topic: str, options: dict, draft: str) -> str:
     await em.stage_start("publisher", "Publisher")
-    final = await provider.stream(
+    final = await _stream(
         system=config.sys(config.PUBLISHER_SYSTEM, options),
         user=config.publisher_user(topic, options, draft),
         on_delta=await _token_emitter(em, "publisher"),

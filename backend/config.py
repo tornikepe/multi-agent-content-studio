@@ -13,7 +13,8 @@ MODEL = "claude-opus-4-8"
 # The reviewer scores drafts 1-10. A draft below this is sent back to the editor.
 SCORE_THRESHOLD = 8
 # Hard cap on automatic revision cycles so the loop can never run away.
-MAX_REVISIONS = 2
+# Kept at 1 to limit the number of model calls per run (free-tier friendly).
+MAX_REVISIONS = 1
 # Reject topics longer than this (basic input guardrail).
 MAX_TOPIC_CHARS = 200
 
