@@ -82,8 +82,23 @@
   .prov-hint{font-size:12.5px; color:var(--faint)}
   .prov-hint a{color:var(--accent); border-bottom:1px solid var(--accent-soft)}
 
+  /* ---------- how it works ---------- */
+  .steps{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:0 0 22px; animation:fadeUp 1s cubic-bezier(.22,1,.36,1)}
+  .step{display:flex; gap:11px; padding:13px 14px; background:color-mix(in srgb,var(--panel) 65%,transparent); border:1px solid var(--border-soft); border-radius:var(--radius-sm); transition:border-color .2s, transform .2s}
+  .step:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--border)); transform:translateY(-2px)}
+  .step .n{font-family:var(--mono); font-size:11px; font-weight:700; color:var(--accent-2); letter-spacing:.06em; margin-top:3px; flex:none}
+  .step b{display:block; font-size:13.5px; margin-bottom:2px}
+  .step p{margin:0; font-size:12px; color:var(--faint); line-height:1.5}
+
+  /* ---------- footer ---------- */
+  footer{margin-top:36px; padding-top:18px; border-top:1px solid var(--border-soft); display:flex; align-items:center; gap:8px; flex-wrap:wrap; color:var(--faint); font-size:12.5px}
+  footer a{color:var(--muted); border-bottom:1px solid var(--border); transition:color .15s}
+  footer a:hover{color:var(--accent)}
+  footer .spacer{flex:1}
+
   /* ---------- intro ---------- */
   .intro{margin:6px 0 22px; animation:fadeUp .8s cubic-bezier(.22,1,.36,1)}
+  @keyframes fadeUp{from{opacity:0; transform:translateY(18px)}to{opacity:1; transform:none}}
   .eyebrow{display:inline-flex; align-items:center; gap:8px; padding:6px 13px; border:1px solid var(--border); border-radius:999px; font-size:12.5px; color:var(--muted); background:color-mix(in srgb,var(--panel) 55%,transparent); backdrop-filter:blur(6px); margin-bottom:16px}
   .pill-dot{width:7px; height:7px; border-radius:50%; background:var(--good); box-shadow:0 0 0 3px rgba(52,211,153,.22)}
   .intro h1{font-size:clamp(28px,4.5vw,44px); line-height:1.08; letter-spacing:-.03em; font-weight:800; margin:0 0 10px}
@@ -245,6 +260,7 @@
 
   @media (max-width:900px){
     .grid{grid-template-columns:1fr}
+    .steps{grid-template-columns:1fr 1fr}
   }
   @media (max-width:720px){
     .controls .row{grid-template-columns:1fr 1fr; gap:10px}
@@ -256,6 +272,7 @@
     .intro h1{font-size:clamp(24px,8vw,34px)}
     header{gap:10px}
     .ghost-link span{display:none}
+    .steps{grid-template-columns:1fr}
   }
 </style>
 </head>
@@ -319,6 +336,14 @@
       <span class="prov-badge" id="provBadge"><span class="pd"></span><span id="provName"></span></span>
       <span class="prov-hint" id="provHint" hidden></span>
     </div>
+  </div>
+
+  <!-- how it works -->
+  <div class="steps">
+    <div class="step"><span class="n">01</span><div><b data-i18n="s1t">Enter a topic</b><p data-i18n="s1b">Type what the post should be about — you pick the tone, length, and language.</p></div></div>
+    <div class="step"><span class="n">02</span><div><b data-i18n="s2t">Agents get to work</b><p data-i18n="s2b">Five specialized AI agents research, draft, score, and revise it — streaming live.</p></div></div>
+    <div class="step"><span class="n">03</span><div><b data-i18n="s3t">You approve</b><p data-i18n="s3b">Review the draft at the human gate: publish it, or send it back with notes.</p></div></div>
+    <div class="step"><span class="n">04</span><div><b data-i18n="s4t">Publish-ready</b><p data-i18n="s4b">Get a polished post with a meta description and tags, ready to ship.</p></div></div>
   </div>
 
   <!-- controls -->
@@ -433,6 +458,12 @@
       </div>
     </div>
   </div>
+
+  <footer>
+    <span data-i18n="footNote">Open-source portfolio project — multi-agent orchestration with a human in the loop.</span>
+    <span class="spacer"></span>
+    <a href="https://github.com/tornikepe/multi-agent-content-studio" target="_blank" rel="noopener">GitHub</a>
+  </footer>
 </div>
 
 <script>
@@ -483,6 +514,11 @@ const STR = {
     m_complete:"Pipeline complete", noIssues:"No blocking issues.",
     provLive:"Live", provOffline:"Offline demo",
     offlineHint:"Add a free key for real generation — see .env.example",
+    s1t:"Enter a topic", s1b:"Type what the post should be about — you pick the tone, length, and language.",
+    s2t:"Agents get to work", s2b:"Five specialized AI agents research, draft, score, and revise it — streaming live.",
+    s3t:"You approve", s3b:"Review the draft at the human gate: publish it, or send it back with notes.",
+    s4t:"Publish-ready", s4b:"Get a polished post with a meta description and tags, ready to ship.",
+    footNote:"Open-source portfolio project — multi-agent orchestration with a human in the loop.",
   },
   ka:{
     source:"წყარო", eyebrow:"ხუთი აგენტი · human-in-the-loop · ცოცხალი streaming",
@@ -517,6 +553,11 @@ const STR = {
     m_complete:"კონვეიერი დასრულდა", noIssues:"არ არის ბლოკირების საკითხები.",
     provLive:"აქტიური", provOffline:"Offline დემო",
     offlineHint:"დაამატე უფასო გასაღები რეალური გენერაციისთვის — იხ. .env.example",
+    s1t:"შეიყვანე თემა", s1b:"დაწერე რაზეც გინდა პოსტი — ტონს, სიგრძესა და ენას შენ ირჩევ.",
+    s2t:"აგენტები მუშაობენ", s2b:"ხუთი სპეციალიზებული AI აგენტი იკვლევს, წერს, აფასებს და ასწორებს — ცოცხლად.",
+    s3t:"შენ ამტკიცებ", s3b:"განიხილე დრაფტი: გამოაქვეყნე ან დააბრუნე შენიშვნებით.",
+    s4t:"მზა პოსტი", s4b:"მიიღე გაპრიალებული პოსტი meta აღწერითა და თეგებით.",
+    footNote:"ღია კოდის პორტფოლიო პროექტი — მრავალაგენტიანი ორკესტრაცია ადამიანის კონტროლით.",
   },
 };
 let lang = localStorage.getItem("macs-lang")==="ka" ? "ka" : "en";

@@ -9,6 +9,8 @@ Writer/Editor/Publisher stream token-by-token; Reviewer returns a structured JSO
 
 from __future__ import annotations
 
+import sys
+
 from . import config
 from .llm import is_fatal_account_error, offline_provider, provider
 from .models import Emitter
@@ -26,12 +28,25 @@ def _lang(options: dict) -> str:
 
 # Resilient wrappers: on a non-fatal provider error (rate limit / transient),
 # fall back to the offline provider so a run always completes instead of erroring.
+def _log_fallback(e: Exception) -> None:
+    """Surface the real provider error in server logs (visible in Vercel runtime logs)."""
+    detail = ""
+    resp = getattr(e, "response", None)
+    if resp is not None:
+        try:
+            detail = " :: " + resp.text[:300]
+        except Exception:
+            pass
+    print(f"[provider-fallback] {provider.name} failed: {type(e).__name__}: {e}{detail}", file=sys.stderr)
+
+
 async def _stream(**kw) -> str:
     try:
         return await provider.stream(**kw)
     except Exception as e:
         if is_fatal_account_error(e):
             raise
+        _log_fallback(e)
         return await offline_provider.stream(**kw)
 
 
@@ -41,6 +56,7 @@ async def _json(**kw) -> dict:
     except Exception as e:
         if is_fatal_account_error(e):
             raise
+        _log_fallback(e)
         return await offline_provider.complete_json(**kw)
 
 

@@ -227,12 +227,33 @@ class GroqProvider(_OpenAICompatProvider):
 
 
 class GeminiProvider(Provider):
-    name, label = "gemini", "Gemini 2.0 Flash"
+    name, label = "gemini", "Gemini Flash"
 
     def __init__(self):
         self.api_key = os.environ.get("GEMINI_API_KEY") or os.environ["GOOGLE_API_KEY"]
-        self.model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+        self.model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
         self.base = "https://generativelanguage.googleapis.com/v1beta/models"
+        self._resolved: str | None = None
+
+    async def _resolve_model(self) -> str:
+        """Pick a model that actually exists on this key (Google rotates model names)."""
+        if self._resolved:
+            return self._resolved
+        try:
+            async with httpx.AsyncClient(timeout=30) as c:
+                r = await c.get(f"{self.base}?key={self.api_key}&pageSize=200")
+                r.raise_for_status()
+                names = [m["name"].split("/")[-1] for m in r.json().get("models", [])
+                         if "generateContent" in m.get("supportedGenerationMethods", [])]
+            for cand in (self.model, "gemini-2.5-flash", "gemini-flash-latest", "gemini-2.0-flash"):
+                if cand in names:
+                    self._resolved = cand
+                    return cand
+            flash = [n for n in names if "flash" in n and "lite" not in n]
+            self._resolved = flash[0] if flash else (names[0] if names else self.model)
+        except Exception:
+            self._resolved = self.model
+        return self._resolved
 
     @staticmethod
     def _parse(line: str):
@@ -247,22 +268,31 @@ class GeminiProvider(Provider):
                       for p in cand.get("content", {}).get("parts", []))
         return out or None
 
+    @staticmethod
+    def _gen_cfg(model: str, max_tokens: int, **extra) -> dict:
+        cfg = {"maxOutputTokens": max_tokens, **extra}
+        if "2.5" in model:  # 2.5 models think by default, eating the output budget
+            cfg["thinkingConfig"] = {"thinkingBudget": 0}
+        return cfg
+
     async def stream(self, *, system, user, on_delta, max_tokens=2600, kind=None, lang="en"):
-        url = f"{self.base}/{self.model}:streamGenerateContent?alt=sse&key={self.api_key}"
+        model = await self._resolve_model()
+        url = f"{self.base}/{model}:streamGenerateContent?alt=sse&key={self.api_key}"
         payload = {
-            "system_instruction": {"parts": [{"text": system}]},
+            "systemInstruction": {"parts": [{"text": system}]},
             "contents": [{"role": "user", "parts": [{"text": user}]}],
-            "generationConfig": {"maxOutputTokens": max_tokens},
+            "generationConfig": self._gen_cfg(model, max_tokens),
         }
         return await _stream_retry(url, {}, payload, self._parse, on_delta)
 
     async def complete_json(self, *, system, user, schema, max_tokens=4000, lang="en"):
-        url = f"{self.base}/{self.model}:generateContent?key={self.api_key}"
+        model = await self._resolve_model()
+        url = f"{self.base}/{model}:generateContent?key={self.api_key}"
         sys2 = system + "\n\nRespond with ONLY a JSON object matching this schema:\n" + json.dumps(schema)
         payload = {
-            "system_instruction": {"parts": [{"text": sys2}]},
+            "systemInstruction": {"parts": [{"text": sys2}]},
             "contents": [{"role": "user", "parts": [{"text": user}]}],
-            "generationConfig": {"maxOutputTokens": max_tokens, "response_mime_type": "application/json"},
+            "generationConfig": self._gen_cfg(model, max_tokens, responseMimeType="application/json"),
         }
         r = await _post_retry(url, {}, payload)
         data = r.json()
