@@ -67,24 +67,22 @@
   .icon-btn{width:38px; height:38px; display:grid; place-items:center; border-radius:var(--radius-sm); border:1px solid var(--border); background:color-mix(in srgb,var(--panel) 55%,transparent); color:var(--muted); cursor:pointer; transition:border-color .15s,color .15s,background .15s; backdrop-filter:blur(6px)}
   .icon-btn:hover{border-color:var(--accent); color:var(--text); background:var(--accent-soft)}
   .icon-btn svg{width:18px; height:18px}
-  .ghost-link{display:inline-flex; align-items:center; gap:7px; color:var(--muted); font-size:13.5px; font-weight:500; padding:8px 12px; border-radius:var(--radius-sm); border:1px solid var(--border); background:color-mix(in srgb,var(--panel) 55%,transparent); transition:border-color .15s,color .15s; backdrop-filter:blur(6px)}
+  .ghost-link{display:inline-flex; align-items:center; justify-content:center; gap:7px; min-width:112px; color:var(--muted); font-size:13.5px; font-weight:500; padding:8px 12px; border-radius:var(--radius-sm); border:1px solid var(--border); background:color-mix(in srgb,var(--panel) 55%,transparent); transition:border-color .15s,color .15s; backdrop-filter:blur(6px)}
   .ghost-link:hover{border-color:var(--accent); color:var(--text)}
   .ghost-link svg{width:15px; height:15px}
   .theme-icon-moon{display:none}
   :root[data-theme="light"] .theme-icon-sun{display:none}
   :root[data-theme="light"] .theme-icon-moon{display:block}
-  .lang-btn{width:auto; min-width:46px; padding:0 12px; font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.03em}
-  .prov-line{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:15px}
-  .prov-badge{display:inline-flex; align-items:center; gap:7px; font-family:var(--mono); font-size:11px; letter-spacing:.04em; color:var(--muted); background:var(--panel); border:1px solid var(--border); padding:5px 11px; border-radius:999px}
-  .prov-badge .pd{width:7px; height:7px; border-radius:50%; background:var(--good); flex:none}
-  .prov-badge.offline{color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,var(--border))}
-  .prov-badge.offline .pd{background:var(--warn)}
-  .prov-hint{font-size:12.5px; color:var(--faint)}
-  .prov-hint a{color:var(--accent); border-bottom:1px solid var(--accent-soft)}
+  .lang-btn{width:52px; min-width:52px; padding:0; font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.03em}
+  /* interactive 3D hero (THREE.js) — floats to the right of the intro copy */
+  #hero-canvas{position:absolute; top:50%; right:-30px; transform:translateY(-50%); width:360px; height:360px; display:block; pointer-events:none; opacity:.85; z-index:0}
+  :root[data-theme="light"] #hero-canvas{opacity:.6}
+  @media (max-width:900px){ #hero-canvas{width:290px; height:290px; right:-70px; opacity:.4} }
+  @media (max-width:480px){ #hero-canvas{display:none} }
 
   /* ---------- how it works ---------- */
   .steps{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:0 0 22px; animation:fadeUp 1s cubic-bezier(.22,1,.36,1)}
-  .step{display:flex; gap:11px; padding:13px 14px; background:color-mix(in srgb,var(--panel) 65%,transparent); border:1px solid var(--border-soft); border-radius:var(--radius-sm); transition:border-color .2s, transform .2s}
+  .step{display:flex; gap:11px; min-height:104px; padding:13px 14px; background:color-mix(in srgb,var(--panel) 65%,transparent); border:1px solid var(--border-soft); border-radius:var(--radius-sm); transition:border-color .2s, transform .2s}
   .step:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--border)); transform:translateY(-2px)}
   .step .n{font-family:var(--mono); font-size:11px; font-weight:700; color:var(--accent-2); letter-spacing:.06em; margin-top:3px; flex:none}
   .step b{display:block; font-size:13.5px; margin-bottom:2px}
@@ -96,30 +94,36 @@
   footer a:hover{color:var(--accent)}
   footer .spacer{flex:1}
 
-  /* ---------- intro ---------- */
-  .intro{margin:6px 0 22px; animation:fadeUp .8s cubic-bezier(.22,1,.36,1)}
+  /* ---------- intro (fixed height so language switches never reflow) ---------- */
+  .intro{position:relative; margin:6px 0 22px; min-height:250px; display:flex; flex-direction:column; justify-content:center; animation:fadeUp .8s cubic-bezier(.22,1,.36,1)}
   @keyframes fadeUp{from{opacity:0; transform:translateY(18px)}to{opacity:1; transform:none}}
-  .eyebrow{display:inline-flex; align-items:center; gap:8px; padding:6px 13px; border:1px solid var(--border); border-radius:999px; font-size:12.5px; color:var(--muted); background:color-mix(in srgb,var(--panel) 55%,transparent); backdrop-filter:blur(6px); margin-bottom:16px}
-  .pill-dot{width:7px; height:7px; border-radius:50%; background:var(--good); box-shadow:0 0 0 3px rgba(52,211,153,.22)}
-  .intro h1{font-size:clamp(28px,4.5vw,44px); line-height:1.08; letter-spacing:-.03em; font-weight:800; margin:0 0 10px}
-  .intro p{font-size:clamp(15px,1.8vw,17px); color:var(--muted); max-width:640px; margin:0}
+  .intro h1{position:relative; z-index:1; max-width:800px; font-size:clamp(28px,4.5vw,44px); line-height:1.08; letter-spacing:-.03em; font-weight:800; margin:0 0 10px}
+  .intro p{position:relative; z-index:1; font-size:clamp(15px,1.8vw,17px); color:var(--muted); max-width:620px; margin:0}
+  @media (max-width:480px){ .intro{min-height:0} }
 
   /* ---------- panel + controls ---------- */
   .panel{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow-sm)}
   .controls{padding:18px}
   .controls .row{display:grid; grid-template-columns:1fr 165px 145px auto; gap:12px; align-items:end}
   .field label{display:block; margin:0 0 6px 2px}
-  input,select,textarea{width:100%; background:var(--bg-2); color:var(--text); border:1px solid var(--border); border-radius:var(--radius-sm); padding:11px 13px; font:inherit; font-size:14.5px; outline:none; transition:border-color .15s,box-shadow .15s}
-  input:focus,select:focus,textarea:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
-  input::placeholder{color:var(--faint)}
+  input,select,textarea{width:100%; background:var(--bg-2); color:var(--text); border:1px solid var(--border); border-radius:var(--radius-sm); padding:11px 13px; font:inherit; font-size:14.5px; outline:none; transition:border-color .15s,box-shadow .15s,background .15s}
+  input:hover,select:hover,textarea:hover{border-color:color-mix(in srgb,var(--accent) 35%,var(--border))}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); background:var(--panel)}
+  input::placeholder,textarea::placeholder{color:var(--faint)}
+  select{appearance:none; -webkit-appearance:none; padding-right:34px; cursor:pointer; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239aa1ad' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center}
   .controls .row2{display:grid; grid-template-columns:1fr 190px; gap:12px; margin-top:12px}
   @media (max-width:720px){ .controls .row2{grid-template-columns:1fr} }
   button{cursor:pointer; font:inherit; font-weight:600; border:1px solid transparent; border-radius:var(--radius-sm); transition:transform .12s,filter .15s,background .15s,border-color .15s}
   button:active{transform:translateY(1px) scale(.99)}
-  .btn-primary{display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:11px 20px; background:var(--accent); color:#fff; white-space:nowrap; box-shadow:var(--shadow-sm)}
-  .btn-primary:hover{background:var(--accent-2); transform:translateY(-1px)}
-  .btn-primary:disabled{opacity:.5; cursor:not-allowed; transform:none; background:var(--accent)}
+  .btn-primary{display:inline-flex; align-items:center; justify-content:center; gap:9px; min-width:240px; padding:11px 20px; color:#fff; white-space:nowrap;
+    background:linear-gradient(180deg,#6d70f4 0%,#5a5df0 100%); border-color:rgba(255,255,255,.14);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.22), 0 8px 22px -10px rgba(99,102,241,.75)}
+  .btn-primary:hover{background:linear-gradient(180deg,#7a7df6 0%,#6366f1 100%); transform:translateY(-1px); box-shadow:inset 0 1px 0 rgba(255,255,255,.25), 0 12px 26px -10px rgba(99,102,241,.85)}
+  .btn-primary:disabled{opacity:.8; cursor:progress; transform:none}
   .btn-primary svg{width:16px; height:16px}
+  .btn-primary .btn-spin{display:none; width:15px; height:15px; border-radius:50%; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; animation:spin .7s linear infinite}
+  .btn-primary.loading .btn-ic{display:none}
+  .btn-primary.loading .btn-spin{display:inline-block}
 
   /* ---------- pipeline ---------- */
   .pipeline{display:flex; align-items:stretch; margin:24px 0 20px; overflow-x:auto; padding:2px; position:relative}
@@ -235,17 +239,23 @@
   .approval-inner h3 svg{width:16px; height:16px; color:var(--accent)}
   .approval-inner p{margin:0 0 13px; color:var(--muted); font-size:13px}
   .approval-actions{display:flex; gap:10px; flex-wrap:wrap}
-  .btn-good{display:inline-flex; align-items:center; gap:8px; padding:11px 18px; background:var(--good); color:#04150e; font-weight:650}
-  .btn-good:hover{filter:brightness(1.06); transform:translateY(-1px)}
+  .btn-good{display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:11px 18px; color:#04150e; font-weight:650;
+    background:linear-gradient(180deg,#43dba4 0%,#2fc98f 100%); border-color:rgba(255,255,255,.16);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 8px 20px -10px rgba(52,211,153,.7)}
+  .btn-good:hover{filter:brightness(1.05); transform:translateY(-1px)}
   .btn-good svg{width:16px; height:16px}
-  .btn-ghost{display:inline-flex; align-items:center; gap:8px; padding:11px 16px; color:var(--text); background:var(--panel-2); border:1px solid var(--border)}
-  .btn-ghost:hover{border-color:var(--danger); color:var(--danger)}
+  .btn-ghost{display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:11px 16px; color:var(--text); background:var(--panel-2); border:1px solid var(--border); box-shadow:var(--shadow-sm)}
+  .btn-ghost:hover{border-color:var(--danger); color:var(--danger); transform:translateY(-1px)}
   .btn-ghost svg{width:15px; height:15px}
+  /* fixed widths (fit the longer Georgian labels) so nothing shifts on language toggle */
+  #approveBtn{min-width:282px} #rejectBtn{min-width:242px} #sendReject{min-width:222px} #cancelReject{min-width:132px}
   #rejectBox{display:none; margin-top:12px}
   #rejectBox textarea{min-height:66px; resize:vertical}
   #rejectBox .rr{display:flex; gap:10px; margin-top:10px}
-  .btn-send{display:inline-flex; align-items:center; gap:7px; padding:9px 16px; background:var(--accent); color:#fff; font-weight:600}
-  .btn-send:hover{background:var(--accent-2)}
+  .btn-send{display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:9px 16px; color:#fff; font-weight:600;
+    background:linear-gradient(180deg,#6d70f4 0%,#5a5df0 100%); border-color:rgba(255,255,255,.14);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.22)}
+  .btn-send:hover{filter:brightness(1.07); transform:translateY(-1px)}
   .btn-send svg{width:15px; height:15px}
 
   /* published + banner + error */
@@ -287,12 +297,8 @@
   </defs>
   <symbol id="mark" viewBox="0 0 32 32">
     <rect width="32" height="32" rx="9" fill="url(#mark-grad)"/>
-    <g fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M9 16 H15"/><path d="M18 10 L15 16 L18 22"/>
-      <circle cx="8" cy="16" r="1.7" fill="#fff" stroke="none"/>
-      <circle cx="21" cy="10" r="1.7" fill="#c7d2fe" stroke="none"/>
-      <circle cx="21" cy="22" r="1.7" fill="#c7d2fe" stroke="none"/>
-    </g>
+    <path d="M9.4 22.6 V9.4 L16 17.2 L22.6 9.4 V22.6" fill="none" stroke="#fff"
+          stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
   </symbol>
     <symbol id="ic-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
     <symbol id="ic-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></symbol>
@@ -330,12 +336,9 @@
   </header>
 
   <div class="intro">
+    <canvas id="hero-canvas" aria-hidden="true"></canvas>
     <h1 data-i18n="h1">From a topic to a publish-ready post — agent by agent.</h1>
     <p data-i18n="sub">A pipeline of specialized AI agents researches, writes, reviews, and revises your post. You approve the final draft before it publishes.</p>
-    <div class="prov-line" id="provLine" hidden>
-      <span class="prov-badge" id="provBadge"><span class="pd"></span><span id="provName"></span></span>
-      <span class="prov-hint" id="provHint" hidden></span>
-    </div>
   </div>
 
   <!-- how it works -->
@@ -371,7 +374,7 @@
           <option value="long" data-i18n="lenLong">Long</option>
         </select>
       </div>
-      <button class="btn-primary" id="runBtn"><span data-i18n="run">Run pipeline</span> <svg><use href="#ic-arrow"/></svg></button>
+      <button class="btn-primary" id="runBtn"><span data-i18n="run">Run pipeline</span> <svg class="btn-ic"><use href="#ic-arrow"/></svg><span class="btn-spin"></span></button>
     </div>
     <div class="row2">
       <div class="field">
@@ -466,6 +469,7 @@
   </footer>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 // ---------- theme ----------
 const root = document.documentElement;
@@ -578,7 +582,6 @@ document.getElementById("langBtn").onclick = ()=>{
   document.getElementById("clang").value = lang;  // default content language follows UI
   applyStatic();
   relabelPipeline();
-  renderProv();
 };
 
 // ---------- agent metadata ----------
@@ -692,7 +695,7 @@ async function start(){
 }
 
 async function runPhase(url, body){
-  runBtn.disabled=true; runBtn.innerHTML=t("running");
+  runBtn.disabled=true; runBtn.classList.add("loading");   // label stays put — only the icon becomes a spinner
   logDot.classList.add("on"); docDot.classList.add("on");
   pipeEl.classList.add("running");   // pause the idle flow-pulse while working
   try{ await streamPost(url, body, handle); }
@@ -820,8 +823,7 @@ function onDone(e){
 function finish(){
   logDot.classList.remove("on"); docDot.classList.remove("on");
   pipeEl.classList.remove("running");
-  runBtn.disabled=false;
-  runBtn.innerHTML=`<span>${t("run")}</span> <svg><use href="#ic-arrow"/></svg>`;
+  runBtn.disabled=false; runBtn.classList.remove("loading");
 }
 
 // ---------- helpers ----------
@@ -854,25 +856,83 @@ function resetUI(){
   for(let i=0;i<AGENTS.length-1;i++) $("conn-"+i).classList.remove("filled");
 }
 
-// ---------- provider badge ----------
-let provState=null;
-function renderProv(){
-  if(!provState) return;
-  const off = provState.provider==="offline";
-  $("provName").textContent = off ? t("provOffline") : t("provLive");
-  $("provBadge").classList.toggle("offline", off);
-  $("provHint").hidden = !off;
-  if(off) $("provHint").innerHTML = t("offlineHint");
-  $("provLine").hidden = false;
-}
-async function loadProviderBadge(){
-  try{ const r=await fetch("/api/config"); if(r.ok){ provState=await r.json(); renderProv(); } }catch(_){}
+// ---------- interactive 3D hero (THREE.js) ----------
+// A glossy icosphere that "breathes" and follows the pointer — same hero as the
+// RAG project. Gracefully skipped if WebGL/THREE is unavailable or motion is reduced.
+let hero3DStarted = false;
+function initHero3D(){
+  if(hero3DStarted) return;
+  const canvas = document.getElementById("hero-canvas");
+  if(!canvas || typeof THREE === "undefined") return;
+  if(window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  hero3DStarted = true;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  camera.position.z = 8.5;
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+  const geo = new THREE.IcosahedronGeometry(1.7, 6);
+  const base = Float32Array.from(geo.attributes.position.array);
+  const orb = new THREE.Mesh(
+    geo,
+    new THREE.MeshStandardMaterial({
+      color: 0x6366f1, metalness: 0.45, roughness: 0.28,
+      emissive: 0x140f3a, emissiveIntensity: 0.55,
+    })
+  );
+  scene.add(orb);
+
+  scene.add(new THREE.AmbientLight(0x24304f, 0.7));
+  [
+    [0x6366f1, 2.6, [-4, 3, 4]],
+    [0xa78bfa, 2.3, [4, -3, 3]],
+    [0x8b5cf6, 1.3, [0, 4, -4]],
+    [0xffffff, 0.8, [0, 0, 6]],
+  ].forEach(([c, i, p]) => { const l = new THREE.PointLight(c, i, 24); l.position.set(...p); scene.add(l); });
+
+  let mx = 0, my = 0, tx = 0, ty = 0;
+  window.addEventListener("pointermove", (e) => {
+    tx = e.clientX / window.innerWidth - 0.5;
+    ty = e.clientY / window.innerHeight - 0.5;
+  });
+
+  const resize = () => {
+    const w = canvas.clientWidth || 360, h = canvas.clientHeight || 360;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  };
+  new ResizeObserver(resize).observe(canvas);
+  resize();
+
+  const pos = geo.attributes.position;
+  const clock = new THREE.Clock();
+  (function frame(){
+    requestAnimationFrame(frame);   // browsers pause RAF in hidden tabs on their own
+    const t = clock.getElapsedTime();
+    for(let i = 0; i < pos.count; i++){
+      const ix = i * 3;
+      const bx = base[ix], by = base[ix + 1], bz = base[ix + 2];
+      const n = (Math.sin(bx * 2.1 + t) + Math.sin(by * 2.5 + t * 1.15) + Math.sin(bz * 1.9 + t * 0.85)) / 3;
+      const s = 1 + 0.14 * n;
+      pos.setXYZ(i, bx * s, by * s, bz * s);
+    }
+    pos.needsUpdate = true;
+    geo.computeVertexNormals();
+    mx += (tx - mx) * 0.05;
+    my += (ty - my) * 0.05;
+    orb.rotation.y = t * 0.12 + mx * 0.8;
+    orb.rotation.x = my * 0.5;
+    renderer.render(scene, camera);
+  })();
 }
 
 // ---------- init ----------
 $("clang").value = lang;   // content language defaults to the UI language
 applyStatic();
-loadProviderBadge();
+try{ initHero3D(); }catch(_e){ /* WebGL unavailable → aurora only */ }
 </script>
 </body>
 </html>
