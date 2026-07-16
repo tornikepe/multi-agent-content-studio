@@ -41,6 +41,11 @@
   a{color:inherit; text-decoration:none}
   .mono-label{font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.14em; color:var(--faint); font-weight:600}
 
+  /* ---------- animated network background (Vanta.js) ---------- */
+  #bg-net{position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0; transition:opacity 1.2s ease}
+  #bg-net.on{opacity:1}
+  #bg-net canvas{display:block}
+
   /* ---------- aurora background ---------- */
   .aurora{position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none}
   .aurora .blob{position:absolute; border-radius:50%; filter:blur(90px); opacity:.5; will-change:transform}
@@ -316,6 +321,8 @@
     <symbol id="ic-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></symbol>
 </svg>
 
+<!-- animated network background (Vanta.js) — the CSS aurora below is the graceful fallback -->
+<div id="bg-net" aria-hidden="true"></div>
 <div class="aurora"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
 
 <div class="wrap">
@@ -470,6 +477,7 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.net.min.js"></script>
 <script>
 // ---------- theme ----------
 const root = document.documentElement;
@@ -481,6 +489,7 @@ document.getElementById("themeBtn").onclick = ()=>{
   const next = root.getAttribute("data-theme")==="light" ? "dark" : "light";
   root.setAttribute("data-theme", next);
   localStorage.setItem("macs-theme", next);
+  if(bgNet) bgNet.setOptions({ backgroundColor: next==="light" ? 0xfbfbfc : 0x0a0a0c });
 };
 
 // ---------- i18n (English / Georgian) ----------
@@ -929,9 +938,35 @@ function initHero3D(){
   })();
 }
 
+// ---------- animated network background (Vanta.js NET) ----------
+// A drifting, mouse-reactive web of connected nodes — an "agent network".
+// If the library or WebGL is unavailable, the CSS aurora stays as the fallback.
+let bgNet = null;
+function initBgNet(){
+  const el = document.getElementById("bg-net");
+  if(!el || typeof VANTA === "undefined" || typeof THREE === "undefined") return;
+  if(window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const light = root.getAttribute("data-theme") === "light";
+  bgNet = VANTA.NET({
+    el,
+    mouseControls: true, touchControls: true, gyroControls: false,
+    minHeight: 200, minWidth: 200, scale: 1, scaleMobile: 1,
+    color: 0x6366f1,
+    backgroundColor: light ? 0xfbfbfc : 0x0a0a0c,
+    points: 9, maxDistance: 21, spacing: 17,
+  });
+  el.classList.add("on");
+  document.querySelector(".aurora").style.display = "none";  // NET replaces the CSS fallback
+  // If we initialized while the tab was hidden/zero-sized, re-measure once it becomes visible.
+  const fixSize = ()=>{ try{ if(bgNet && bgNet.resize) bgNet.resize(); }catch(_e){} };
+  window.addEventListener("resize", fixSize);
+  document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) fixSize(); });
+}
+
 // ---------- init ----------
 $("clang").value = lang;   // content language defaults to the UI language
 applyStatic();
+try{ initBgNet(); }catch(_e){ /* library/WebGL unavailable → aurora stays */ }
 try{ initHero3D(); }catch(_e){ /* WebGL unavailable → aurora only */ }
 </script>
 </body>
