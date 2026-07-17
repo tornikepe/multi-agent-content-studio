@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Multi-Agent Content Studio</title>
+<title>Peit — Multi-Agent Content Studio</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%236366f1'/%3E%3Cstop offset='1' stop-color='%238b5cf6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='9' fill='url(%23g)'/%3E%3Cpath d='M11.5 24V8H17a5 5 0 0 1 0 10H11.5' fill='none' stroke='white' stroke-width='2.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
 <style>
   /* ============================================================
      Design system (shared language with the Peit / RAG project)
@@ -39,7 +40,7 @@
     line-height:1.6; -webkit-font-smoothing:antialiased; min-height:100vh;
   }
   a{color:inherit; text-decoration:none}
-  .mono-label{font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.14em; color:var(--faint); font-weight:600}
+  .mono-label{font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.14em; color:var(--muted); font-weight:600}
 
   /* ---------- animated network background (Vanta.js) ---------- */
   #bg-net{position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0; transition:opacity 1.2s ease}
@@ -87,7 +88,7 @@
 
   /* ---------- how it works ---------- */
   .steps{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:0 0 22px; animation:fadeUp 1s cubic-bezier(.22,1,.36,1)}
-  .step{display:flex; gap:11px; min-height:104px; padding:13px 14px; background:color-mix(in srgb,var(--panel) 65%,transparent); border:1px solid var(--border-soft); border-radius:var(--radius-sm); transition:border-color .2s, transform .2s}
+  .step{display:flex; gap:11px; min-height:118px; padding:13px 14px; background:color-mix(in srgb,var(--panel) 65%,transparent); border:1px solid var(--border-soft); border-radius:var(--radius-sm); transition:border-color .2s, transform .2s}
   .step:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--border)); transform:translateY(-2px)}
   .step .n{font-family:var(--mono); font-size:11px; font-weight:700; color:var(--accent-2); letter-spacing:.06em; margin-top:3px; flex:none}
   .step b{display:block; font-size:13.5px; margin-bottom:2px}
@@ -104,7 +105,8 @@
   @keyframes fadeUp{from{opacity:0; transform:translateY(18px)}to{opacity:1; transform:none}}
   .intro h1{position:relative; z-index:1; max-width:800px; font-size:clamp(28px,4.5vw,44px); line-height:1.08; letter-spacing:-.03em; font-weight:800; margin:0 0 10px}
   .intro p{position:relative; z-index:1; font-size:clamp(15px,1.8vw,17px); color:var(--muted); max-width:620px; margin:0}
-  @media (max-width:480px){ .intro{min-height:0} }
+  /* keep a fixed height on mobile too (tallest = Georgian) so language toggles never reflow */
+  @media (max-width:480px){ .intro{min-height:260px; margin:2px 0 18px} }
 
   /* ---------- panel + controls ---------- */
   .panel{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow-sm)}
@@ -138,14 +140,15 @@
   .pipeline.running::after{animation:none; opacity:0}
   @keyframes travel{0%{left:1%; opacity:0} 6%{opacity:1} 94%{opacity:1} 100%{left:99%; opacity:0}}
   @media (prefers-reduced-motion:reduce){ .pipeline::after,.aurora .blob{animation:none} }
-  .node{flex:1 1 0; min-width:148px; background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:14px; position:relative; z-index:1; transition:border-color .35s,box-shadow .35s,background .35s,transform .3s; animation:nodeIn .5s cubic-bezier(.22,1,.36,1) backwards; animation-delay:var(--in,0s)}
+  .node{flex:1 1 0; min-width:148px; min-height:168px; background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:14px; position:relative; z-index:1; transition:border-color .35s,box-shadow .35s,background .35s,transform .3s; animation:nodeIn .5s cubic-bezier(.22,1,.36,1) backwards; animation-delay:var(--in,0s)}
   @keyframes nodeIn{from{opacity:0; transform:translateY(12px)}to{opacity:1; transform:none}}
   .node .top{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px}
   .node .idx{font-family:var(--mono); font-size:11px; color:var(--faint); letter-spacing:.06em}
   .node .ico{width:34px; height:34px; border-radius:10px; display:grid; place-items:center; border:1px solid var(--border); color:var(--muted); background:var(--panel-2); transition:color .35s,border-color .35s,background .35s; margin-bottom:9px}
   .node .ico svg{width:18px; height:18px}
-  .node .nm{font-weight:650; font-size:14px}
-  .node .role{font-size:11.5px; color:var(--faint); margin-top:2px}
+  /* reserve room for up to 2 lines each so the node height is identical in EN & KA */
+  .node .nm{font-weight:650; font-size:14px; min-height:19px; line-height:1.25}
+  .node .role{font-size:11.5px; color:var(--faint); margin-top:3px; min-height:32px; line-height:1.35}
   .node .st{margin-top:9px; display:flex; align-items:center; gap:7px; min-height:16px; font-size:11.5px; color:var(--faint)}
   .node .check{opacity:0; color:var(--good); transform:scale(.5); transition:opacity .3s,transform .3s}
   .node .check svg{width:15px; height:15px; display:block}
@@ -166,8 +169,10 @@
   /* ---------- layout ---------- */
   .grid{display:grid; grid-template-columns:1.6fr 1fr; gap:18px; align-items:start}
   .card{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden}
-  .card > h2{margin:0; padding:13px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:9px}
-  .card > h2 svg{width:15px; height:15px; color:var(--muted)}
+  .card > h2{margin:0; padding:14px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:9px;
+    background:linear-gradient(180deg, color-mix(in srgb,var(--accent) 6%,transparent), transparent)}
+  .card > h2 .mono-label{color:var(--text); font-size:11px}
+  .card > h2 svg{width:15px; height:15px; color:var(--accent)}
   .card .body{padding:16px}
   .live-dot{width:7px; height:7px; border-radius:50%; background:var(--faint); flex:none}
   .live-dot.on{background:var(--accent); animation:pulse 1.3s ease-in-out infinite}
@@ -271,7 +276,12 @@
   .err{display:none; align-items:flex-start; gap:9px; background:var(--danger-soft); border:1px solid color-mix(in srgb,var(--danger) 40%,var(--border)); color:var(--danger); padding:12px 15px; border-radius:var(--radius-sm); margin-top:16px; font-size:13.5px}
   .err svg{width:16px; height:16px; flex:none; margin-top:2px}
   .err a{color:var(--danger); text-decoration:underline}
-  .empty-hint{color:var(--faint); font-size:13px; padding:6px 2px}
+  .empty-hint{color:var(--muted); font-size:13px; padding:6px 2px}
+  /* activity-log empty state — centered, matching the workspace card */
+  .log:has(.log-empty){display:flex; align-items:center; justify-content:center; min-height:120px}
+  .log-empty{text-align:center; color:var(--muted)}
+  .log-empty svg{width:22px; height:22px; color:var(--accent); opacity:.85; margin:0 auto 8px; display:block}
+  .log-empty span{display:block; font-size:12.5px; max-width:220px; line-height:1.5}
 
   @media (max-width:900px){
     .grid{grid-template-columns:1fr}
@@ -302,7 +312,7 @@
   </defs>
   <symbol id="mark" viewBox="0 0 32 32">
     <rect width="32" height="32" rx="9" fill="url(#mark-grad)"/>
-    <path d="M9.4 22.6 V9.4 L16 17.2 L22.6 9.4 V22.6" fill="none" stroke="#fff"
+    <path d="M11.5 24 V8 H17 a5 5 0 0 1 0 10 H11.5" fill="none" stroke="#fff"
           stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
   </symbol>
     <symbol id="ic-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
@@ -319,6 +329,7 @@
     <symbol id="ic-github" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.9a3.4 3.4 0 0 0-.9-2.6c3-.3 6.2-1.5 6.2-6.7A5.2 5.2 0 0 0 20 4.8a4.8 4.8 0 0 0-.1-3.6s-1.1-.3-3.6 1.4a12.4 12.4 0 0 0-6.6 0C7.2.9 6.1 1.2 6.1 1.2A4.8 4.8 0 0 0 6 4.8a5.2 5.2 0 0 0-1.4 3.6c0 5.2 3.2 6.4 6.2 6.7a3.4 3.4 0 0 0-.9 2.6V22"/></symbol>
     <symbol id="ic-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></symbol>
     <symbol id="ic-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></symbol>
+    <symbol id="ic-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
 </svg>
 
 <!-- animated network background (Vanta.js) — the CSS aurora below is the graceful fallback -->
@@ -329,7 +340,7 @@
   <header>
     <div class="logo">
       <svg class="logo-mark"><use href="#mark"/></svg>
-      <span class="logo-text"><b>Multi-Agent</b> <b class="grad-text">Studio</b></span>
+      <span class="logo-text"><b class="grad-text">Peit</b></span>
     </div>
     <span class="spacer"></span>
     <a class="ghost-link" id="repoLink" href="https://github.com/tornikepe/multi-agent-content-studio" target="_blank" rel="noopener">
@@ -464,7 +475,7 @@
 
       <div class="card" style="margin-top:18px">
         <h2><span class="live-dot" id="logDot"></span> <span class="mono-label" style="letter-spacing:.12em" data-i18n="cLog">Activity log</span></h2>
-        <div class="body"><div class="log" id="log"><div class="empty-hint" data-i18n="logEmpty">Events stream here in real time.</div></div></div>
+        <div class="body"><div class="log" id="log"><div class="log-empty"><svg><use href="#ic-activity"/></svg><span data-i18n="logEmpty">Events stream here in real time.</span></div></div></div>
       </div>
     </div>
   </div>
@@ -860,7 +871,7 @@ function resetUI(){
   $("docCard").classList.remove("published"); setDocTitle("ws_workspace"); $("feedback").value="";
   $("reviewCard").style.display="none"; $("sourcesCard").style.display="none";
   $("scoreTxt").textContent="–"; $("ringFg").style.strokeDashoffset=239; $("ringFg").classList.remove("pass");
-  logEl.innerHTML=`<div class="empty-hint">${t("logEmpty")}</div>`;
+  logEl.innerHTML=`<div class="log-empty"><svg><use href="#ic-activity"/></svg><span>${t("logEmpty")}</span></div>`;
   AGENTS.forEach(a=>{ const n=$("node-"+a.id); n.classList.remove("active","done"); $("st-"+a.id).textContent=t("st_idle"); });
   for(let i=0;i<AGENTS.length-1;i++) $("conn-"+i).classList.remove("filled");
 }
