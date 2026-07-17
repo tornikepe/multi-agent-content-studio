@@ -1,14 +1,22 @@
-# Multi-Agent Content Studio
+# Peit — Multi-Agent Content Studio
 
 **Turn a topic into a publish-ready blog post — written, reviewed, and revised by a
 pipeline of five AI agents, with you approving the final draft.**
 
+[![CI](https://github.com/tornikepe/multi-agent-content-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/tornikepe/multi-agent-content-studio/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-6366f1.svg)](LICENSE)
+![Python](https://img.shields.io/badge/Python-3.12-3776ab.svg)
+
 🔗 **Live demo:** [multi-agent-content-studio.vercel.app](https://multi-agent-content-studio.vercel.app)
+
+![Peit — Multi-Agent Content Studio](docs/screenshot-hero.png)
 
 Type a topic ("How RAG systems reduce LLM hallucinations"), pick a tone, length, and
 language (English / ქართული), and watch five specialized agents work in real time:
 one researches, one writes, one scores the draft 1–10 with concrete critique, one
 applies the fixes — and nothing gets published until **you** approve it.
+
+![A pipeline run reaching the human approval gate](docs/screenshot-run.png)
 
 ---
 
@@ -123,6 +131,17 @@ The repo is Vercel-ready (`vercel.json` + `api/index.py`):
 3. Redeploy — done
 
 Works as-is on any ASGI host too (Railway / Render / Fly): `uvicorn backend.main:app`.
+
+## Tests
+
+25 tests cover the guardrails, request validation, the provider layer, and the
+full pipeline end-to-end (through the FastAPI app). They run on the offline
+provider, so **no API keys are needed** — the same as CI.
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
 
 ## Configuration
 
