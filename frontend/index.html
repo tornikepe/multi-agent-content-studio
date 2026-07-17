@@ -168,6 +168,9 @@
 
   /* ---------- layout ---------- */
   .grid{display:grid; grid-template-columns:1.6fr 1fr; gap:18px; align-items:start}
+  /* rail: flex gap collapses for hidden cards, so the Activity log top-aligns with
+     the Workspace whenever the Reviewer/Sources cards aren't shown */
+  .grid > div:last-child{display:flex; flex-direction:column; gap:18px}
   .card{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden}
   .card > h2{margin:0; padding:14px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:9px;
     background:linear-gradient(180deg, color-mix(in srgb,var(--accent) 6%,transparent), transparent)}
@@ -276,12 +279,16 @@
   .err{display:none; align-items:flex-start; gap:9px; background:var(--danger-soft); border:1px solid color-mix(in srgb,var(--danger) 40%,var(--border)); color:var(--danger); padding:12px 15px; border-radius:var(--radius-sm); margin-top:16px; font-size:13.5px}
   .err svg{width:16px; height:16px; flex:none; margin-top:2px}
   .err a{color:var(--danger); text-decoration:underline}
-  .empty-hint{color:var(--muted); font-size:13px; padding:6px 2px}
-  /* activity-log empty state — centered, matching the workspace card */
-  .log:has(.log-empty){display:flex; align-items:center; justify-content:center; min-height:120px}
-  .log-empty{text-align:center; color:var(--muted)}
-  .log-empty svg{width:22px; height:22px; color:var(--accent); opacity:.85; margin:0 auto 8px; display:block}
-  .log-empty span{display:block; font-size:12.5px; max-width:220px; line-height:1.5}
+  .empty-hint{color:var(--muted); font-size:13px; padding:6px 2px; text-align:center}
+  /* shared empty state — Workspace + Activity log use the same block so the two
+     cards line up and read as a matched pair */
+  .empty-state{display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; min-height:190px; gap:14px; padding:24px; color:var(--muted)}
+  .log .empty-state{min-height:0; height:190px}
+  .empty-state .es-ic{width:46px; height:46px; border-radius:14px; display:grid; place-items:center;
+    border:1px solid var(--border); background:var(--panel-2); color:var(--accent)}
+  .empty-state .es-ic svg{width:22px; height:22px}
+  .empty-state p{margin:0; font-size:13px; max-width:240px; line-height:1.55}
 
   @media (max-width:900px){
     .grid{grid-template-columns:1fr}
@@ -423,7 +430,7 @@
         </h2>
         <div class="body">
           <div id="liveWrap"><div class="streaming" id="stream"></div></div>
-          <div class="doc empty" id="doc" data-i18n="docPlaceholder">The generated draft will appear here. Enter a topic and run the pipeline.</div>
+          <div class="doc" id="doc"><div class="empty-state"><span class="es-ic"><svg><use href="#ic-pen"/></svg></span><p data-i18n="docPlaceholder">The generated draft will appear here. Enter a topic and run the pipeline.</p></div></div>
         </div>
       </div>
 
@@ -468,14 +475,14 @@
         </div>
       </div>
 
-      <div class="card" id="sourcesCard" style="margin-top:18px">
+      <div class="card" id="sourcesCard">
         <h2><svg><use href="#ic-search"/></svg> <span class="mono-label" style="letter-spacing:.12em" data-i18n="cSources">Sources</span></h2>
         <div class="body" id="sources"></div>
       </div>
 
-      <div class="card" style="margin-top:18px">
+      <div class="card">
         <h2><span class="live-dot" id="logDot"></span> <span class="mono-label" style="letter-spacing:.12em" data-i18n="cLog">Activity log</span></h2>
-        <div class="body"><div class="log" id="log"><div class="log-empty"><svg><use href="#ic-activity"/></svg><span data-i18n="logEmpty">Events stream here in real time.</span></div></div></div>
+        <div class="body"><div class="log" id="log"><div class="empty-state"><span class="es-ic"><svg><use href="#ic-activity"/></svg></span><p data-i18n="logEmpty">Events stream here in real time.</p></div></div></div>
       </div>
     </div>
   </div>
@@ -862,16 +869,19 @@ function showError(msg){
   errEl.innerHTML = '<svg><use href="#ic-alert"/></svg><span>'+html+'</span>';
 }
 
+function emptyState(icon, key){
+  return `<div class="empty-state"><span class="es-ic"><svg><use href="#${icon}"/></svg></span><p data-i18n="${key}">${t(key)}</p></div>`;
+}
 function resetUI(){
   curDraft=""; activeAgent=null; streamBuf=""; firstLog=true;
-  doc.classList.add("empty"); doc.textContent=t("running"); doc.style.display="";
+  doc.classList.remove("empty"); doc.innerHTML=emptyState("ic-pen","docPlaceholder"); doc.style.display="";
   liveWrap.style.display="none"; stream.innerHTML=""; stageChip.hidden=true;
   approval.style.display="none"; $("rejectBox").style.display="none";
   banner.style.display="none"; errEl.style.display="none";
   $("docCard").classList.remove("published"); setDocTitle("ws_workspace"); $("feedback").value="";
   $("reviewCard").style.display="none"; $("sourcesCard").style.display="none";
   $("scoreTxt").textContent="–"; $("ringFg").style.strokeDashoffset=239; $("ringFg").classList.remove("pass");
-  logEl.innerHTML=`<div class="log-empty"><svg><use href="#ic-activity"/></svg><span>${t("logEmpty")}</span></div>`;
+  logEl.innerHTML=emptyState("ic-activity","logEmpty");
   AGENTS.forEach(a=>{ const n=$("node-"+a.id); n.classList.remove("active","done"); $("st-"+a.id).textContent=t("st_idle"); });
   for(let i=0;i<AGENTS.length-1;i++) $("conn-"+i).classList.remove("filled");
 }
